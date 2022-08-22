@@ -1,0 +1,19 @@
+{
+    "configurations": [
+        {
+            "name": "ExtractionEditor Editor Win64 Development (Extraction)",
+            "intelliSenseMode": "msvc-x64",
+            "compileCommands": "C:\\Users\\Andre\\Desktop\\Projects\\Repos\\Unreal Engine 5\\Extraction\\.vscode\\compileCommands_Extraction.json",
+            "cStandard": "c17",
+            "cppStandard": "c++17"
+        },
+        {
+            "name": "Win32",
+            "intelliSenseMode": "msvc-x64",
+            "compileCommands": "C:\\Users\\Andre\\Desktop\\Projects\\Repos\\Unreal Engine 5\\Extraction\\.vscode\\compileCommands_Default.json",
+            "cStandard": "c17",
+            "cppStandard": "c++17"
+        }
+    ],
+    "version": 4
+}

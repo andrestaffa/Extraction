@@ -1,0 +1,707 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Extraction Win64 Debug Build",
+			"group": "build",
+			"command": "Engine\\Build\\BatchFiles\\Build.bat",
+			"args": [
+				"Extraction",
+				"Win64",
+				"Debug",
+				"C:\\Users\\Andre\\Desktop\\Projects\\Repos\\Unreal Engine 5\\Extraction\\Extraction.uproject",
+				"-waitmutex"
+			],
+			"problemMatcher": "$msCompile",
+			"type": "shell",
+			"options": {
+				"cwd": "C:\\Program Files\\Epic Games\\UE_5.0"
+			}
+		},
+		{
+			"label": "Extraction Win64 Debug Rebuild",
+			"group": "build",
+			"command": "Engine\\Build\\BatchFiles\\Build.bat",
+			"args": [
+				"Extraction",
+				"Win64",
+				"Debug",
+				"C:\\Users\\Andre\\Desktop\\Projects\\Repos\\Unreal Engine 5\\Extraction\\Extraction.uproject",
+				"-waitmutex"
+			],
+			"problemMatcher": "$msCompile",
+			"dependsOn": [
+				"Extraction Win64 Debug Clean"
+			],
+			"type": "shell",
+			"options": {
+				"cwd": "C:\\Program Files\\Epic Games\\UE_5.0"
+			}
+		},
+		{
+			"label": "Extraction Win64 Debug Clean",
+			"group": "build",
+			"command": "Engine\\Build\\BatchFiles\\Clean.bat",
+			"args": [
+				"Extraction",
+				"Win64",
+				"Debug",
+				"C:\\Users\\Andre\\Desktop\\Projects\\Repos\\Unreal Engine 5\\Extraction\\Extraction.uproject",
+				"-waitmutex"
+			],
+			"problemMatcher": "$msCompile",
+			"type": "shell",
+			"options": {
+				"cwd": "C:\\Program Files\\Epic Games\\UE_5.0"
+			}
+		},
+		{
+			"label": "Extraction Win64 DebugGame Build",
+			"group": "build",
+			"command": "Engine\\Build\\BatchFiles\\Build.bat",
+			"args": [
+				"Extraction",
+				"Win64",
+				"DebugGame",
+				"C:\\Users\\Andre\\Desktop\\Projects\\Repos\\Unreal Engine 5\\Extraction\\Extraction.uproject",
+				"-waitmutex"
+			],
+			"problemMatcher": "$msCompile",
+			"type": "shell",
+			"options": {
+				"cwd": "C:\\Program Files\\Epic Games\\UE_5.0"
+			}
+		},
+		{
+			"label": "Extraction Win64 DebugGame Rebuild",
+			"group": "build",
+			"command": "Engine\\Build\\BatchFiles\\Build.bat",
+			"args": [
+				"Extraction",
+				"Win64",
+				"DebugGame",
+				"C:\\Users\\Andre\\Desktop\\Projects\\Repos\\Unreal Engine 5\\Extraction\\Extraction.uproject",
+				"-waitmutex"
+			],
+			"problemMatcher": "$msCompile",
+			"dependsOn": [
+				"Extraction Win64 DebugGame Clean"
+			],
+			"type": "shell",
+			"options": {
+				"cwd": "C:\\Program Files\\Epic Games\\UE_5.0"
+			}
+		},
+		{
+			"label": "Extraction Win64 DebugGame Clean",
+			"group": "build",
+			"command": "Engine\\Build\\BatchFiles\\Clean.bat",
+			"args": [
+				"Extraction",
+				"Win64",
+				"DebugGame",
+				"C:\\Users\\Andre\\Desktop\\Projects\\Repos\\Unreal Engine 5\\Extraction\\Extraction.uproject",
+				"-waitmutex"
+			],
+			"problemMatcher": "$msCompile",
+			"type": "shell",
+			"options": {
+				"cwd": "C:\\Program Files\\Epic Games\\UE_5.0"
+			}
+		},
+		{
+			"label": "Extraction Win64 Development Build",
+			"group": "build",
+			"command": "Engine\\Build\\BatchFiles\\Build.bat",
+			"args": [
+				"Extraction",
+				"Win64",
+				"Development",
+				"C:\\Users\\Andre\\Desktop\\Projects\\Repos\\Unreal Engine 5\\Extraction\\Extraction.uproject",
+				"-waitmutex"
+			],
+			"problemMatcher": "$msCompile",
+			"type": "shell",
+			"options": {
+				"cwd": "C:\\Program Files\\Epic Games\\UE_5.0"
+			}
+		},
+		{
+			"label": "Extraction Win64 Development Rebuild",
+			"group": "build",
+			"command": "Engine\\Build\\BatchFiles\\Build.bat",
+			"args": [
+				"Extraction",
+				"Win64",
+				"Development",
+				"C:\\Users\\Andre\\Desktop\\Projects\\Repos\\Unreal Engine 5\\Extraction\\Extraction.uproject",
+				"-waitmutex"
+			],
+			"problemMatcher": "$msCompile",
+			"dependsOn": [
+				"Extraction Win64 Development Clean"
+			],
+			"type": "shell",
+			"options": {
+				"cwd": "C:\\Program Files\\Epic Games\\UE_5.0"
+			}
+		},
+		{
+			"label": "Extraction Win64 Development Clean",
+			"group": "build",
+			"command": "Engine\\Build\\BatchFiles\\Clean.bat",
+			"args": [
+				"Extraction",
+				"Win64",
+				"Development",
+				"C:\\Users\\Andre\\Desktop\\Projects\\Repos\\Unreal Engine 5\\Extraction\\Extraction.uproject",
+				"-waitmutex"
+			],
+			"problemMatcher": "$msCompile",
+			"type": "shell",
+			"options": {
+				"cwd": "C:\\Program Files\\Epic Games\\UE_5.0"
+			}
+		},
+		{
+			"label": "Extraction Win64 Test Build",
+			"group": "build",
+			"command": "Engine\\Build\\BatchFiles\\Build.bat",
+			"args": [
+				"Extraction",
+				"Win64",
+				"Test",
+				"C:\\Users\\Andre\\Desktop\\Projects\\Repos\\Unreal Engine 5\\Extraction\\Extraction.uproject",
+				"-waitmutex"
+			],
+			"problemMatcher": "$msCompile",
+			"type": "shell",
+			"options": {
+				"cwd": "C:\\Program Files\\Epic Games\\UE_5.0"
+			}
+		},
+		{
+			"label": "Extraction Win64 Test Rebuild",
+			"group": "build",
+			"command": "Engine\\Build\\BatchFiles\\Build.bat",
+			"args": [
+				"Extraction",
+				"Win64",
+				"Test",
+				"C:\\Users\\Andre\\Desktop\\Projects\\Repos\\Unreal Engine 5\\Extraction\\Extraction.uproject",
+				"-waitmutex"
+			],
+			"problemMatcher": "$msCompile",
+			"dependsOn": [
+				"Extraction Win64 Test Clean"
+			],
+			"type": "shell",
+			"options": {
+				"cwd": "C:\\Program Files\\Epic Games\\UE_5.0"
+			}
+		},
+		{
+			"label": "Extraction Win64 Test Clean",
+			"group": "build",
+			"command": "Engine\\Build\\BatchFiles\\Clean.bat",
+			"args": [
+				"Extraction",
+				"Win64",
+				"Test",
+				"C:\\Users\\Andre\\Desktop\\Projects\\Repos\\Unreal Engine 5\\Extraction\\Extraction.uproject",
+				"-waitmutex"
+			],
+			"problemMatcher": "$msCompile",
+			"type": "shell",
+			"options": {
+				"cwd": "C:\\Program Files\\Epic Games\\UE_5.0"
+			}
+		},
+		{
+			"label": "Extraction Win64 Shipping Build",
+			"group": "build",
+			"command": "Engine\\Build\\BatchFiles\\Build.bat",
+			"args": [
+				"Extraction",
+				"Win64",
+				"Shipping",
+				"C:\\Users\\Andre\\Desktop\\Projects\\Repos\\Unreal Engine 5\\Extraction\\Extraction.uproject",
+				"-waitmutex"
+			],
+			"problemMatcher": "$msCompile",
+			"type": "shell",
+			"options": {
+				"cwd": "C:\\Program Files\\Epic Games\\UE_5.0"
+			}
+		},
+		{
+			"label": "Extraction Win64 Shipping Rebuild",
+			"group": "build",
+			"command": "Engine\\Build\\BatchFiles\\Build.bat",
+			"args": [
+				"Extraction",
+				"Win64",
+				"Shipping",
+				"C:\\Users\\Andre\\Desktop\\Projects\\Repos\\Unreal Engine 5\\Extraction\\Extraction.uproject",
+				"-waitmutex"
+			],
+			"problemMatcher": "$msCompile",
+			"dependsOn": [
+				"Extraction Win64 Shipping Clean"
+			],
+			"type": "shell",
+			"options": {
+				"cwd": "C:\\Program Files\\Epic Games\\UE_5.0"
+			}
+		},
+		{
+			"label": "Extraction Win64 Shipping Clean",
+			"group": "build",
+			"command": "Engine\\Build\\BatchFiles\\Clean.bat",
+			"args": [
+				"Extraction",
+				"Win64",
+				"Shipping",
+				"C:\\Users\\Andre\\Desktop\\Projects\\Repos\\Unreal Engine 5\\Extraction\\Extraction.uproject",
+				"-waitmutex"
+			],
+			"problemMatcher": "$msCompile",
+			"type": "shell",
+			"options": {
+				"cwd": "C:\\Program Files\\Epic Games\\UE_5.0"
+			}
+		},
+		{
+			"label": "Extraction HoloLens Debug Build",
+			"group": "build",
+			"command": "Engine\\Build\\BatchFiles\\Build.bat",
+			"args": [
+				"Extraction",
+				"HoloLens",
+				"Debug",
+				"C:\\Users\\Andre\\Desktop\\Projects\\Repos\\Unreal Engine 5\\Extraction\\Extraction.uproject",
+				"-waitmutex"
+			],
+			"problemMatcher": "$msCompile",
+			"type": "shell",
+			"options": {
+				"cwd": "C:\\Program Files\\Epic Games\\UE_5.0"
+			}
+		},
+		{
+			"label": "Extraction HoloLens Debug Rebuild",
+			"group": "build",
+			"command": "Engine\\Build\\BatchFiles\\Build.bat",
+			"args": [
+				"Extraction",
+				"HoloLens",
+				"Debug",
+				"C:\\Users\\Andre\\Desktop\\Projects\\Repos\\Unreal Engine 5\\Extraction\\Extraction.uproject",
+				"-waitmutex"
+			],
+			"problemMatcher": "$msCompile",
+			"dependsOn": [
+				"Extraction HoloLens Debug Clean"
+			],
+			"type": "shell",
+			"options": {
+				"cwd": "C:\\Program Files\\Epic Games\\UE_5.0"
+			}
+		},
+		{
+			"label": "Extraction HoloLens Debug Clean",
+			"group": "build",
+			"command": "Engine\\Build\\BatchFiles\\Clean.bat",
+			"args": [
+				"Extraction",
+				"HoloLens",
+				"Debug",
+				"C:\\Users\\Andre\\Desktop\\Projects\\Repos\\Unreal Engine 5\\Extraction\\Extraction.uproject",
+				"-waitmutex"
+			],
+			"problemMatcher": "$msCompile",
+			"type": "shell",
+			"options": {
+				"cwd": "C:\\Program Files\\Epic Games\\UE_5.0"
+			}
+		},
+		{
+			"label": "Extraction HoloLens DebugGame Build",
+			"group": "build",
+			"command": "Engine\\Build\\BatchFiles\\Build.bat",
+			"args": [
+				"Extraction",
+				"HoloLens",
+				"DebugGame",
+				"C:\\Users\\Andre\\Desktop\\Projects\\Repos\\Unreal Engine 5\\Extraction\\Extraction.uproject",
+				"-waitmutex"
+			],
+			"problemMatcher": "$msCompile",
+			"type": "shell",
+			"options": {
+				"cwd": "C:\\Program Files\\Epic Games\\UE_5.0"
+			}
+		},
+		{
+			"label": "Extraction HoloLens DebugGame Rebuild",
+			"group": "build",
+			"command": "Engine\\Build\\BatchFiles\\Build.bat",
+			"args": [
+				"Extraction",
+				"HoloLens",
+				"DebugGame",
+				"C:\\Users\\Andre\\Desktop\\Projects\\Repos\\Unreal Engine 5\\Extraction\\Extraction.uproject",
+				"-waitmutex"
+			],
+			"problemMatcher": "$msCompile",
+			"dependsOn": [
+				"Extraction HoloLens DebugGame Clean"
+			],
+			"type": "shell",
+			"options": {
+				"cwd": "C:\\Program Files\\Epic Games\\UE_5.0"
+			}
+		},
+		{
+			"label": "Extraction HoloLens DebugGame Clean",
+			"group": "build",
+			"command": "Engine\\Build\\BatchFiles\\Clean.bat",
+			"args": [
+				"Extraction",
+				"HoloLens",
+				"DebugGame",
+				"C:\\Users\\Andre\\Desktop\\Projects\\Repos\\Unreal Engine 5\\Extraction\\Extraction.uproject",
+				"-waitmutex"
+			],
+			"problemMatcher": "$msCompile",
+			"type": "shell",
+			"options": {
+				"cwd": "C:\\Program Files\\Epic Games\\UE_5.0"
+			}
+		},
+		{
+			"label": "Extraction HoloLens Development Build",
+			"group": "build",
+			"command": "Engine\\Build\\BatchFiles\\Build.bat",
+			"args": [
+				"Extraction",
+				"HoloLens",
+				"Development",
+				"C:\\Users\\Andre\\Desktop\\Projects\\Repos\\Unreal Engine 5\\Extraction\\Extraction.uproject",
+				"-waitmutex"
+			],
+			"problemMatcher": "$msCompile",
+			"type": "shell",
+			"options": {
+				"cwd": "C:\\Program Files\\Epic Games\\UE_5.0"
+			}
+		},
+		{
+			"label": "Extraction HoloLens Development Rebuild",
+			"group": "build",
+			"command": "Engine\\Build\\BatchFiles\\Build.bat",
+			"args": [
+				"Extraction",
+				"HoloLens",
+				"Development",
+				"C:\\Users\\Andre\\Desktop\\Projects\\Repos\\Unreal Engine 5\\Extraction\\Extraction.uproject",
+				"-waitmutex"
+			],
+			"problemMatcher": "$msCompile",
+			"dependsOn": [
+				"Extraction HoloLens Development Clean"
+			],
+			"type": "shell",
+			"options": {
+				"cwd": "C:\\Program Files\\Epic Games\\UE_5.0"
+			}
+		},
+		{
+			"label": "Extraction HoloLens Development Clean",
+			"group": "build",
+			"command": "Engine\\Build\\BatchFiles\\Clean.bat",
+			"args": [
+				"Extraction",
+				"HoloLens",
+				"Development",
+				"C:\\Users\\Andre\\Desktop\\Projects\\Repos\\Unreal Engine 5\\Extraction\\Extraction.uproject",
+				"-waitmutex"
+			],
+			"problemMatcher": "$msCompile",
+			"type": "shell",
+			"options": {
+				"cwd": "C:\\Program Files\\Epic Games\\UE_5.0"
+			}
+		},
+		{
+			"label": "Extraction HoloLens Test Build",
+			"group": "build",
+			"command": "Engine\\Build\\BatchFiles\\Build.bat",
+			"args": [
+				"Extraction",
+				"HoloLens",
+				"Test",
+				"C:\\Users\\Andre\\Desktop\\Projects\\Repos\\Unreal Engine 5\\Extraction\\Extraction.uproject",
+				"-waitmutex"
+			],
+			"problemMatcher": "$msCompile",
+			"type": "shell",
+			"options": {
+				"cwd": "C:\\Program Files\\Epic Games\\UE_5.0"
+			}
+		},
+		{
+			"label": "Extraction HoloLens Test Rebuild",
+			"group": "build",
+			"command": "Engine\\Build\\BatchFiles\\Build.bat",
+			"args": [
+				"Extraction",
+				"HoloLens",
+				"Test",
+				"C:\\Users\\Andre\\Desktop\\Projects\\Repos\\Unreal Engine 5\\Extraction\\Extraction.uproject",
+				"-waitmutex"
+			],
+			"problemMatcher": "$msCompile",
+			"dependsOn": [
+				"Extraction HoloLens Test Clean"
+			],
+			"type": "shell",
+			"options": {
+				"cwd": "C:\\Program Files\\Epic Games\\UE_5.0"
+			}
+		},
+		{
+			"label": "Extraction HoloLens Test Clean",
+			"group": "build",
+			"command": "Engine\\Build\\BatchFiles\\Clean.bat",
+			"args": [
+				"Extraction",
+				"HoloLens",
+				"Test",
+				"C:\\Users\\Andre\\Desktop\\Projects\\Repos\\Unreal Engine 5\\Extraction\\Extraction.uproject",
+				"-waitmutex"
+			],
+			"problemMatcher": "$msCompile",
+			"type": "shell",
+			"options": {
+				"cwd": "C:\\Program Files\\Epic Games\\UE_5.0"
+			}
+		},
+		{
+			"label": "Extraction HoloLens Shipping Build",
+			"group": "build",
+			"command": "Engine\\Build\\BatchFiles\\Build.bat",
+			"args": [
+				"Extraction",
+				"HoloLens",
+				"Shipping",
+				"C:\\Users\\Andre\\Desktop\\Projects\\Repos\\Unreal Engine 5\\Extraction\\Extraction.uproject",
+				"-waitmutex"
+			],
+			"problemMatcher": "$msCompile",
+			"type": "shell",
+			"options": {
+				"cwd": "C:\\Program Files\\Epic Games\\UE_5.0"
+			}
+		},
+		{
+			"label": "Extraction HoloLens Shipping Rebuild",
+			"group": "build",
+			"command": "Engine\\Build\\BatchFiles\\Build.bat",
+			"args": [
+				"Extraction",
+				"HoloLens",
+				"Shipping",
+				"C:\\Users\\Andre\\Desktop\\Projects\\Repos\\Unreal Engine 5\\Extraction\\Extraction.uproject",
+				"-waitmutex"
+			],
+			"problemMatcher": "$msCompile",
+			"dependsOn": [
+				"Extraction HoloLens Shipping Clean"
+			],
+			"type": "shell",
+			"options": {
+				"cwd": "C:\\Program Files\\Epic Games\\UE_5.0"
+			}
+		},
+		{
+			"label": "Extraction HoloLens Shipping Clean",
+			"group": "build",
+			"command": "Engine\\Build\\BatchFiles\\Clean.bat",
+			"args": [
+				"Extraction",
+				"HoloLens",
+				"Shipping",
+				"C:\\Users\\Andre\\Desktop\\Projects\\Repos\\Unreal Engine 5\\Extraction\\Extraction.uproject",
+				"-waitmutex"
+			],
+			"problemMatcher": "$msCompile",
+			"type": "shell",
+			"options": {
+				"cwd": "C:\\Program Files\\Epic Games\\UE_5.0"
+			}
+		},
+		{
+			"label": "ExtractionEditor Win64 Debug Build",
+			"group": "build",
+			"command": "Engine\\Build\\BatchFiles\\Build.bat",
+			"args": [
+				"ExtractionEditor",
+				"Win64",
+				"Debug",
+				"C:\\Users\\Andre\\Desktop\\Projects\\Repos\\Unreal Engine 5\\Extraction\\Extraction.uproject",
+				"-waitmutex"
+			],
+			"problemMatcher": "$msCompile",
+			"type": "shell",
+			"options": {
+				"cwd": "C:\\Program Files\\Epic Games\\UE_5.0"
+			}
+		},
+		{
+			"label": "ExtractionEditor Win64 Debug Rebuild",
+			"group": "build",
+			"command": "Engine\\Build\\BatchFiles\\Build.bat",
+			"args": [
+				"ExtractionEditor",
+				"Win64",
+				"Debug",
+				"C:\\Users\\Andre\\Desktop\\Projects\\Repos\\Unreal Engine 5\\Extraction\\Extraction.uproject",
+				"-waitmutex"
+			],
+			"problemMatcher": "$msCompile",
+			"dependsOn": [
+				"ExtractionEditor Win64 Debug Clean"
+			],
+			"type": "shell",
+			"options": {
+				"cwd": "C:\\Program Files\\Epic Games\\UE_5.0"
+			}
+		},
+		{
+			"label": "ExtractionEditor Win64 Debug Clean",
+			"group": "build",
+			"command": "Engine\\Build\\BatchFiles\\Clean.bat",
+			"args": [
+				"ExtractionEditor",
+				"Win64",
+				"Debug",
+				"C:\\Users\\Andre\\Desktop\\Projects\\Repos\\Unreal Engine 5\\Extraction\\Extraction.uproject",
+				"-waitmutex"
+			],
+			"problemMatcher": "$msCompile",
+			"type": "shell",
+			"options": {
+				"cwd": "C:\\Program Files\\Epic Games\\UE_5.0"
+			}
+		},
+		{
+			"label": "ExtractionEditor Win64 DebugGame Build",
+			"group": "build",
+			"command": "Engine\\Build\\BatchFiles\\Build.bat",
+			"args": [
+				"ExtractionEditor",
+				"Win64",
+				"DebugGame",
+				"C:\\Users\\Andre\\Desktop\\Projects\\Repos\\Unreal Engine 5\\Extraction\\Extraction.uproject",
+				"-waitmutex"
+			],
+			"problemMatcher": "$msCompile",
+			"type": "shell",
+			"options": {
+				"cwd": "C:\\Program Files\\Epic Games\\UE_5.0"
+			}
+		},
+		{
+			"label": "ExtractionEditor Win64 DebugGame Rebuild",
+			"group": "build",
+			"command": "Engine\\Build\\BatchFiles\\Build.bat",
+			"args": [
+				"ExtractionEditor",
+				"Win64",
+				"DebugGame",
+				"C:\\Users\\Andre\\Desktop\\Projects\\Repos\\Unreal Engine 5\\Extraction\\Extraction.uproject",
+				"-waitmutex"
+			],
+			"problemMatcher": "$msCompile",
+			"dependsOn": [
+				"ExtractionEditor Win64 DebugGame Clean"
+			],
+			"type": "shell",
+			"options": {
+				"cwd": "C:\\Program Files\\Epic Games\\UE_5.0"
+			}
+		},
+		{
+			"label": "ExtractionEditor Win64 DebugGame Clean",
+			"group": "build",
+			"command": "Engine\\Build\\BatchFiles\\Clean.bat",
+			"args": [
+				"ExtractionEditor",
+				"Win64",
+				"DebugGame",
+				"C:\\Users\\Andre\\Desktop\\Projects\\Repos\\Unreal Engine 5\\Extraction\\Extraction.uproject",
+				"-waitmutex"
+			],
+			"problemMatcher": "$msCompile",
+			"type": "shell",
+			"options": {
+				"cwd": "C:\\Program Files\\Epic Games\\UE_5.0"
+			}
+		},
+		{
+			"label": "ExtractionEditor Win64 Development Build",
+			"group": "build",
+			"command": "Engine\\Build\\BatchFiles\\Build.bat",
+			"args": [
+				"ExtractionEditor",
+				"Win64",
+				"Development",
+				"C:\\Users\\Andre\\Desktop\\Projects\\Repos\\Unreal Engine 5\\Extraction\\Extraction.uproject",
+				"-waitmutex"
+			],
+			"problemMatcher": "$msCompile",
+			"type": "shell",
+			"options": {
+				"cwd": "C:\\Program Files\\Epic Games\\UE_5.0"
+			}
+		},
+		{
+			"label": "ExtractionEditor Win64 Development Rebuild",
+			"group": "build",
+			"command": "Engine\\Build\\BatchFiles\\Build.bat",
+			"args": [
+				"ExtractionEditor",
+				"Win64",
+				"Development",
+				"C:\\Users\\Andre\\Desktop\\Projects\\Repos\\Unreal Engine 5\\Extraction\\Extraction.uproject",
+				"-waitmutex"
+			],
+			"problemMatcher": "$msCompile",
+			"dependsOn": [
+				"ExtractionEditor Win64 Development Clean"
+			],
+			"type": "shell",
+			"options": {
+				"cwd": "C:\\Program Files\\Epic Games\\UE_5.0"
+			}
+		},
+		{
+			"label": "ExtractionEditor Win64 Development Clean",
+			"group": "build",
+			"command": "Engine\\Build\\BatchFiles\\Clean.bat",
+			"args": [
+				"ExtractionEditor",
+				"Win64",
+				"Development",
+				"C:\\Users\\Andre\\Desktop\\Projects\\Repos\\Unreal Engine 5\\Extraction\\Extraction.uproject",
+				"-waitmutex"
+			],
+			"problemMatcher": "$msCompile",
+			"type": "shell",
+			"options": {
+				"cwd": "C:\\Program Files\\Epic Games\\UE_5.0"
+			}
+		}
+	]
+}
