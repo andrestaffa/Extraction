@@ -15,14 +15,11 @@ AItem::AItem() {
 
 	this->itemMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Weapon Mesh"));
 	this->itemMesh->SetupAttachment(this->root);
-
 }
 
 // Called when the game starts or when spawned
 void AItem::BeginPlay() {
 	Super::BeginPlay();
-
-	this->Character = Cast<AFPSCharacter>(UGameplayStatics::GetPlayerCharacter(this, 0));
 	
 }
 

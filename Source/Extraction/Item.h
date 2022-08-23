@@ -23,13 +23,10 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item Properties")
+private:
+	UPROPERTY(BlueprintReadOnly, Category = "Item Properties", meta = (AllowPrivateAccess = "true"))
 	USceneComponent* root;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item Properties")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Item Properties", meta = (AllowPrivateAccess = "true"))
 	USkeletalMeshComponent* itemMesh;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item Properties")
-	class AFPSCharacter* Character;
-
 };

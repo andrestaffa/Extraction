@@ -20,8 +20,8 @@ AFPSCharacter::AFPSCharacter() :
 	isCrouching(false),
 	isProning(false),
 	isVaulting(false),
-	isSliding(false),
 	isClimbing(false),
+	isSliding(false),
 	isSprinting(false),
 	runButtonPressed(false),
 	isReloading(false),
@@ -87,7 +87,7 @@ void AFPSCharacter::SpawnDefaultWeapon() {
 }
 
 void AFPSCharacter::MovementUpdate() {
-	if (this->ADSEnabled || this->moveForwardValue <= -1.0f || this->moveRightValue != 0.0f || this->isVaulting) {
+	if (this->ADSEnabled || this->moveForwardValue <= -1.0f || this->moveRightValue != 0.0f || this->isVaulting || this->isClimbing) {
 		this->ToggleSprint(false);
 		return;
 	}
@@ -173,8 +173,7 @@ void AFPSCharacter::ProneButtonPressed() {
 
 void AFPSCharacter::JumpButtonPressed() {
 	this->Jump();
-	this->Vault();
-	this->Climb();
+	this->Mantle();
 }
 
 void AFPSCharacter::SprintButtonPressed() {
@@ -205,32 +204,54 @@ void AFPSCharacter::ReloadButtonPressed() {
 	}
 }
 
-void AFPSCharacter::Vault() {
+void AFPSCharacter::Mantle() {
 	FHitResult hitResult;
-	FVector start = this->GetActorLocation();
-	FVector end = start + this->GetActorRotation().Vector() * 200.0f;
+	FVector start = this->GetActorLocation() + FVector(0.0f, 0.0f, -70.0f);
+	FVector end = start + this->GetActorForwardVector() * 200.0f;
 	FCollisionObjectQueryParams params;
 	params.ObjectTypesToQuery = params.AllStaticObjects;
-	if (!GetWorld()->LineTraceSingleByObjectType(hitResult, start, end, params)) {
-		FHitResult vaultHitResult;
-		FVector startVaultPos = this->GetActorLocation() + FVector(0.0f, 0.0f, -70.0f);
-		FVector endVaultPos = start + this->GetActorRotation().Vector() * 200.0f;
-		FCollisionObjectQueryParams paramsVault;
-		paramsVault.ObjectTypesToQuery = paramsVault.AllStaticObjects;
-		if (GetWorld()->LineTraceSingleByObjectType(vaultHitResult, startVaultPos, endVaultPos, paramsVault)) {
-			this->capsuleComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-			Cast<UCharacterMovementComponent>(this->GetMovementComponent())->SetMovementMode(EMovementMode::MOVE_Flying);
-			UAnimInstance* animInstance = this->GetMesh()->GetAnimInstance();
-			if (animInstance && this->vaultMontage) {
-				this->isVaulting = true;
-				animInstance->Montage_Play(this->vaultMontage);
-				FTimerHandle timerHandle;
-				GetWorldTimerManager().SetTimer(timerHandle, [&](){ 
-					this->capsuleComp->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-					Cast<UCharacterMovementComponent>(this->GetMovementComponent())->SetMovementMode(EMovementMode::MOVE_Walking);
-					this->isVaulting = false;
-				 }, 1.17f, false);
-			} 
+	if (GetWorld()->LineTraceSingleByObjectType(hitResult, start, end, params)) {
+		if (hitResult.GetActor()) {
+			FVector origin;
+			FVector boxExtents;
+			hitResult.GetActor()->GetActorBounds(false, origin, boxExtents, false);
+			if (boxExtents.Z <= 50.0f) {
+				this->Vault();
+			} else {
+				this->Climb();
+			}
+		}
+	}
+}
+
+void AFPSCharacter::Vault() {
+	if (this->isVaulting) return;
+	FHitResult hitResult;
+	FVector start = this->GetActorLocation() + FVector(0.0f, 0.0f, -70.0f);
+	FVector end = start + this->GetActorRotation().Vector() * 125.0f;
+	FCollisionObjectQueryParams params;
+	params.ObjectTypesToQuery = params.AllStaticObjects;
+	if (GetWorld()->LineTraceSingleByObjectType(hitResult, start, end, params)) {
+		this->isReloading = false;
+		this->PlayMantleAnimation(this->vaultMontage, 1.17f, this->isVaulting);
+	}
+}
+
+void AFPSCharacter::Climb() {
+	if (this->isClimbing) return;
+	FHitResult hitResult;
+	FVector start = this->GetActorLocation() + FVector(0.0f, 0.0f, 70.0f);
+	FVector end = start + this->GetControlRotation().Vector() * 200.0f;
+	FCollisionObjectQueryParams params;
+	params.ObjectTypesToQuery = params.AllStaticObjects;
+	if (GetWorld()->LineTraceSingleByObjectType(hitResult, start, end, params)) {
+		if (hitResult.ImpactNormal.Z >= 1.0f && hitResult.GetActor()) {
+			FVector origin;
+			FVector boxExtents;
+			hitResult.GetActor()->GetActorBounds(false, origin, boxExtents, false);
+			this->isReloading = false;
+			this->SetActorLocation(FVector(this->GetActorLocation().X, this->GetActorLocation().Y, boxExtents.Z + 50.0f));
+			this->PlayMantleAnimation(this->climbMontage, 1.13f, this->isClimbing);
 		}
 	}
 }
@@ -239,8 +260,20 @@ void AFPSCharacter::Slide() {
 	
 }
 
-void AFPSCharacter::Climb() {
-	
+void AFPSCharacter::PlayMantleAnimation(UAnimMontage* montageAnim, float animTime, bool& inAnimBool) {
+	this->capsuleComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	Cast<UCharacterMovementComponent>(this->GetMovementComponent())->SetMovementMode(EMovementMode::MOVE_Flying);
+	UAnimInstance* animInstance = this->GetMesh()->GetAnimInstance();
+	if (animInstance && montageAnim) { 
+		inAnimBool = true;
+		animInstance->Montage_Play(montageAnim);
+		FTimerHandle timerHandle;
+		GetWorldTimerManager().SetTimer(timerHandle, [&](){ 
+			this->capsuleComp->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+			Cast<UCharacterMovementComponent>(this->GetMovementComponent())->SetMovementMode(EMovementMode::MOVE_Walking);
+			inAnimBool = false;
+		}, animTime, false);
+	}
 }
 
 

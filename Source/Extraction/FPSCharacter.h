@@ -29,6 +29,7 @@ public:
 
 private:
 
+	// Components
 	class UCapsuleComponent* capsuleComp;
 
 	// Weapon
@@ -79,9 +80,9 @@ private:
 	UPROPERTY(BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
 	bool isVaulting;
 	UPROPERTY(BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
-	bool isSliding;
-	UPROPERTY(BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
 	bool isClimbing;
+	UPROPERTY(BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
+	bool isSliding;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement",  meta = (AllowPrivateAccess = "true"))
 	class UAnimMontage* vaultMontage;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement",  meta = (AllowPrivateAccess = "true"))
@@ -125,9 +126,11 @@ protected:
 
 	// Jumping/Vaulting/Sliding/Climbing
 	void JumpButtonPressed();
+	void Mantle();
 	void Vault();
-	void Slide();
 	void Climb();
+	void Slide();
+	void PlayMantleAnimation(class UAnimMontage* montageAnim, float animTime, bool& inAnimBool);
 
 	// Sprinting
 	void SprintButtonPressed();
