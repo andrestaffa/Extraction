@@ -47,6 +47,7 @@ void AFPSCharacter::BeginPlay() {
 void AFPSCharacter::Tick(float DeltaTime) {
 	Super::Tick(DeltaTime);
 
+	this->SlideUpdate(DeltaTime);
 	this->CancelReloadUpdate();
 	this->MovementUpdate();
 }
@@ -148,7 +149,12 @@ void AFPSCharacter::LookUp(float axisValue) {
 }
 
 void AFPSCharacter::CrouchButtonPressed() {
-	this->ToggleCrouch(!this->isCrouching);
+	if (this->SlideCancel()) return;
+	if (this->GetVelocity().Size() >= 550.0f) {
+		this->Slide();
+	} else {
+		this->ToggleCrouch(!this->isCrouching);
+	}
 }
 
 void AFPSCharacter::ToggleCrouch(bool toggle) {
@@ -174,10 +180,12 @@ void AFPSCharacter::ProneButtonPressed() {
 void AFPSCharacter::JumpButtonPressed() {
 	this->Jump();
 	this->SetupParkour();
+	this->SlideCancel();
 }
 
 void AFPSCharacter::SprintButtonPressed() {
 	this->runButtonPressed = true;
+	this->SlideCancel();
 }
 
 void AFPSCharacter::SprintButtonReleased() {
@@ -189,8 +197,10 @@ void AFPSCharacter::ToggleSprint(bool toggle) {
 		this->GetCharacterMovement()->MaxWalkSpeed = 600.0f;
 		this->isSprinting = true;
 	} else {
-		this->GetCharacterMovement()->MaxWalkSpeed = 350.0f;
-		this->isSprinting = false;
+		if (!this->isSliding) {
+			this->GetCharacterMovement()->MaxWalkSpeed = 350.0f;
+			this->isSprinting = false;
+		}
 	}
 }
 
@@ -247,7 +257,7 @@ void AFPSCharacter::Vault() {
 			FVector boxExtents;
 			if (hitResult.GetActor()) 
 				hitResult.GetActor()->GetActorBounds(false, origin, boxExtents, false);
-			this->SetActorLocation(FVector(this->GetActorLocation().X, this->GetActorLocation().Y, boxExtents.Z + 75.0f));
+			this->SetActorLocation(FVector(this->GetActorLocation().X, this->GetActorLocation().Y, boxExtents.Z + 10.0f));
 			this->PlayMantleAnimation(this->climbMontage, 1.17f, this->isClimbing);
 		} else {
 			this->PlayMantleAnimation(this->vaultMontage, 0.7f, this->isVaulting);
@@ -268,7 +278,7 @@ void AFPSCharacter::Climb() {
 		FVector boxExtents;
 		if (hitResult.GetActor()) hitResult.GetActor()->GetActorBounds(false, origin, boxExtents, false);
 		float distanceToTop = boxExtents.Z - (abs(origin.Z - hitResult.Location.Z));
-		if (hitResult.ImpactNormal.Z >= 1.0f || distanceToTop <= 25.0f) {
+		if (hitResult.ImpactNormal.Z >= 1.0f || distanceToTop <= 30.0f) {
 			this->isReloading = false;
 			this->SetActorLocation(FVector(this->GetActorLocation().X, this->GetActorLocation().Y, boxExtents.Z + 50.0f));
 			this->PlayMantleAnimation(this->climbMontage, 1.17f, this->isClimbing);
@@ -277,17 +287,38 @@ void AFPSCharacter::Climb() {
 }
 
 void AFPSCharacter::Slide() {
-	
+	this->isSliding = true;
+	this->isSprinting = false;
+	this->runButtonPressed = false;
+	GetWorldTimerManager().SetTimer(this->slideTimerHandle, [&](){
+		this->isSliding = false;
+	}, 1.53f, false);
+}
+
+bool AFPSCharacter::SlideCancel() {
+	if (this->isSliding) {
+		this->isSliding = false;
+		GetWorldTimerManager().ClearTimer(this->slideTimerHandle);
+		return true;
+	}
+	return false;
+}
+
+void AFPSCharacter::SlideUpdate(float DeltaTime) {
+	if (this->isSliding && this->GetVelocity().Size() < 250.0f) {
+		this->SlideCancel();
+		return;
+	}
+	if (this->isSliding) this->GetCharacterMovement()->MaxWalkSpeed = 500.0f;
 }
 
 void AFPSCharacter::PlayMantleAnimation(UAnimMontage* montageAnim, float animTime, bool& inAnimBool) {
 	this->capsuleComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	Cast<UCharacterMovementComponent>(this->GetMovementComponent())->SetMovementMode(EMovementMode::MOVE_Flying);
-	UAnimInstance* animInstance = this->GetMesh()->GetAnimInstance();
 	bool isClimbingMontage = this->climbMontage == montageAnim;
-	if (animInstance && montageAnim) { 
+	if (montageAnim) { 
 		inAnimBool = true;
-		animInstance->Montage_Play(montageAnim);
+		this->PlayAnimMontage(montageAnim);
 		FTimerHandle timerHandle;
 		GetWorldTimerManager().SetTimer(timerHandle, [&](){ 
 			this->capsuleComp->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);

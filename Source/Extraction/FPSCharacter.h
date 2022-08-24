@@ -86,9 +86,8 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement",  meta = (AllowPrivateAccess = "true"))
 	class UAnimMontage* vaultMontage;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement",  meta = (AllowPrivateAccess = "true"))
-	class UAnimMontage* slideMontage;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement",  meta = (AllowPrivateAccess = "true"))
 	class UAnimMontage* climbMontage;
+	FTimerHandle slideTimerHandle;
 
 	// Sprinting
 	UPROPERTY(BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
@@ -130,6 +129,8 @@ protected:
 	void Vault();
 	void Climb();
 	void Slide();
+	bool SlideCancel();
+	void SlideUpdate(float DeltaTime);
 	void PlayMantleAnimation(class UAnimMontage* montageAnim, float animTime, bool& inAnimBool);
 
 	// Sprinting
