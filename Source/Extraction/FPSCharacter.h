@@ -126,7 +126,7 @@ protected:
 
 	// Jumping/Vaulting/Sliding/Climbing
 	void JumpButtonPressed();
-	void Mantle();
+	void SetupParkour();
 	void Vault();
 	void Climb();
 	void Slide();

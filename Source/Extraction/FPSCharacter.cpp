@@ -173,7 +173,7 @@ void AFPSCharacter::ProneButtonPressed() {
 
 void AFPSCharacter::JumpButtonPressed() {
 	this->Jump();
-	this->Mantle();
+	this->SetupParkour();
 }
 
 void AFPSCharacter::SprintButtonPressed() {
@@ -204,7 +204,7 @@ void AFPSCharacter::ReloadButtonPressed() {
 	}
 }
 
-void AFPSCharacter::Mantle() {
+void AFPSCharacter::SetupParkour() {
 	FHitResult hitResult;
 	FVector start = this->GetActorLocation() + FVector(0.0f, 0.0f, -70.0f);
 	FVector end = start + this->GetActorForwardVector() * 200.0f;
@@ -214,8 +214,9 @@ void AFPSCharacter::Mantle() {
 		if (hitResult.GetActor()) {
 			FVector origin;
 			FVector boxExtents;
-			hitResult.GetActor()->GetActorBounds(false, origin, boxExtents, false);
-			if (boxExtents.Z <= 50.0f) {
+			if (hitResult.GetActor()) 
+				hitResult.GetActor()->GetActorBounds(false, origin, boxExtents, false);
+			if (boxExtents.Z <= (this->capsuleComp->GetScaledCapsuleHalfHeight() / 2.0f)) {
 				this->Vault();
 			} else {
 				this->Climb();
@@ -232,8 +233,26 @@ void AFPSCharacter::Vault() {
 	FCollisionObjectQueryParams params;
 	params.ObjectTypesToQuery = params.AllStaticObjects;
 	if (GetWorld()->LineTraceSingleByObjectType(hitResult, start, end, params)) {
+		FVector A = end - start;
+		FVector N = hitResult.ImpactNormal;
+		float cosine = A.CosineAngle2D(N);
+		float angle = acos(cosine);
+		angle = angle * (180.0f / PI);
+		FHitResult wallThickHitResult;
+		start = hitResult.ImpactPoint;
+		end = start + hitResult.ImpactNormal * -110.0f;
+		bool wallIsThick = GetWorld()->LineTraceSingleByObjectType(wallThickHitResult, start, end, params);
+		if (angle < 155.0f || !this->isSprinting || !wallIsThick) {
+			FVector origin;
+			FVector boxExtents;
+			if (hitResult.GetActor()) 
+				hitResult.GetActor()->GetActorBounds(false, origin, boxExtents, false);
+			this->SetActorLocation(FVector(this->GetActorLocation().X, this->GetActorLocation().Y, boxExtents.Z + 75.0f));
+			this->PlayMantleAnimation(this->climbMontage, 1.17f, this->isClimbing);
+		} else {
+			this->PlayMantleAnimation(this->vaultMontage, 0.7f, this->isVaulting);
+		}
 		this->isReloading = false;
-		this->PlayMantleAnimation(this->vaultMontage, 1.17f, this->isVaulting);
 	}
 }
 
@@ -245,13 +264,14 @@ void AFPSCharacter::Climb() {
 	FCollisionObjectQueryParams params;
 	params.ObjectTypesToQuery = params.AllStaticObjects;
 	if (GetWorld()->LineTraceSingleByObjectType(hitResult, start, end, params)) {
-		if (hitResult.ImpactNormal.Z >= 1.0f && hitResult.GetActor()) {
-			FVector origin;
-			FVector boxExtents;
-			hitResult.GetActor()->GetActorBounds(false, origin, boxExtents, false);
+		FVector origin;
+		FVector boxExtents;
+		if (hitResult.GetActor()) hitResult.GetActor()->GetActorBounds(false, origin, boxExtents, false);
+		float distanceToTop = boxExtents.Z - (abs(origin.Z - hitResult.Location.Z));
+		if (hitResult.ImpactNormal.Z >= 1.0f || distanceToTop <= 25.0f) {
 			this->isReloading = false;
 			this->SetActorLocation(FVector(this->GetActorLocation().X, this->GetActorLocation().Y, boxExtents.Z + 50.0f));
-			this->PlayMantleAnimation(this->climbMontage, 1.13f, this->isClimbing);
+			this->PlayMantleAnimation(this->climbMontage, 1.17f, this->isClimbing);
 		}
 	}
 }
@@ -264,6 +284,7 @@ void AFPSCharacter::PlayMantleAnimation(UAnimMontage* montageAnim, float animTim
 	this->capsuleComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	Cast<UCharacterMovementComponent>(this->GetMovementComponent())->SetMovementMode(EMovementMode::MOVE_Flying);
 	UAnimInstance* animInstance = this->GetMesh()->GetAnimInstance();
+	bool isClimbingMontage = this->climbMontage == montageAnim;
 	if (animInstance && montageAnim) { 
 		inAnimBool = true;
 		animInstance->Montage_Play(montageAnim);
@@ -272,6 +293,9 @@ void AFPSCharacter::PlayMantleAnimation(UAnimMontage* montageAnim, float animTim
 			this->capsuleComp->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 			Cast<UCharacterMovementComponent>(this->GetMovementComponent())->SetMovementMode(EMovementMode::MOVE_Walking);
 			inAnimBool = false;
+			if (isClimbingMontage) {
+				this->SetActorLocation(this->GetActorLocation() + this->GetActorForwardVector() * 50.0f);
+			}
 		}, animTime, false);
 	}
 }
