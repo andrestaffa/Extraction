@@ -25,6 +25,7 @@ AFPSCharacter::AFPSCharacter() :
 	isSprinting(false),
 	runButtonPressed(false),
 	isReloading(false),
+	leanValue(0.0f),
 	ADSEnabled(false)
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
@@ -71,6 +72,8 @@ void AFPSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 	PlayerInputComponent->BindAction(TEXT("Sprint"), EInputEvent::IE_Released, this, &AFPSCharacter::SprintButtonReleased);
 
 	PlayerInputComponent->BindAction(TEXT("Reload"), EInputEvent::IE_Pressed, this, &AFPSCharacter::ReloadButtonPressed);
+
+	PlayerInputComponent->BindAxis(TEXT("Lean"), this, &AFPSCharacter::Lean);
 }
 
 void AFPSCharacter::HandleCameraShake() {
@@ -211,6 +214,16 @@ void AFPSCharacter::ReloadButtonPressed() {
 		GetWorldTimerManager().SetTimer(this->reloadTimerHandle, [&](){
 			this->isReloading = false;
 		}, 2.17f, false);
+	}
+}
+
+void AFPSCharacter::Lean(float axisValue) {
+	if (axisValue <= -1.0f) {
+		this->leanValue = FMath::FInterpTo(this->leanValue, -20.0f, GetWorld()->DeltaTimeSeconds, 5.0f);
+	} else if (axisValue >= 1.0f) {
+		this->leanValue = FMath::FInterpTo(this->leanValue, 20.0f, GetWorld()->DeltaTimeSeconds, 5.0f);
+	} else {
+		this->leanValue = FMath::FInterpTo(this->leanValue, 0.0f, GetWorld()->DeltaTimeSeconds, 5.0f);
 	}
 }
 

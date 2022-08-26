@@ -99,6 +99,10 @@ private:
 	bool isReloading;
 	FTimerHandle reloadTimerHandle;
 
+	// Leaning
+	UPROPERTY(BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
+	float leanValue;
+
 	// (Aiming) SET IN BLUEPRINTS
 	UPROPERTY(BlueprintReadWrite, Category = "Movement", meta = (AllowPrivateAccess = "true"))
 	bool ADSEnabled;
@@ -140,6 +144,9 @@ protected:
 
 	// Reloading
 	void ReloadButtonPressed();
+
+	// Leaning
+	void Lean(float axisValue);
 
 // MARK: - [END] Movement Variables/Functions
 
