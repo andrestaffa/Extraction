@@ -74,6 +74,9 @@ void AFPSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 	PlayerInputComponent->BindAction(TEXT("Reload"), EInputEvent::IE_Pressed, this, &AFPSCharacter::ReloadButtonPressed);
 
 	PlayerInputComponent->BindAxis(TEXT("Lean"), this, &AFPSCharacter::Lean);
+
+	PlayerInputComponent->BindAction(TEXT("Fire"), EInputEvent::IE_Pressed, this, &AFPSCharacter::FireButtonPressed);
+	PlayerInputComponent->BindAction(TEXT("Fire"), EInputEvent::IE_Released, this, &AFPSCharacter::FireButtonReleased);
 }
 
 void AFPSCharacter::HandleCameraShake() {
@@ -88,6 +91,14 @@ void AFPSCharacter::SpawnDefaultWeapon() {
 	if (this->equippedWeapon) {
 		this->equippedWeapon->AttachToComponent(this->GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, FName("RightHand"));
 	}
+}
+
+void AFPSCharacter::FireButtonPressed() {
+	this->equippedWeapon->Shoot();
+}
+
+void AFPSCharacter::FireButtonReleased() {
+	this->equippedWeapon->StopShooting();
 }
 
 void AFPSCharacter::MovementUpdate() {

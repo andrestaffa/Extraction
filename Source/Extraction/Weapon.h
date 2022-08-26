@@ -26,4 +26,14 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+
+private:
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Stats", meta = (AllowPrivateAccess = "true"))
+	float fireRate;
+	bool bCanShoot;
+
+public:
+	void Shoot();
+	void StopShooting();
+
 };

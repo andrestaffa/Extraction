@@ -29,4 +29,9 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Item Properties", meta = (AllowPrivateAccess = "true"))
 	USkeletalMeshComponent* itemMesh;
+
+
+public:
+	FORCEINLINE USkeletalMeshComponent* GetItemMesh() { return this->itemMesh; }
+
 };

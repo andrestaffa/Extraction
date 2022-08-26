@@ -40,20 +40,8 @@ private:
 
 private:
 	void SpawnDefaultWeapon();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+	void FireButtonPressed();
+	void FireButtonReleased();
 
 
 
