@@ -8,7 +8,6 @@
 
 // Sets default values
 AWeapon::AWeapon() :
-	fireRate(0.1f),
 	bCanShoot(false)
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
@@ -31,12 +30,12 @@ void AWeapon::Shoot() {
 	FTransform socketTransform = barrelSocket->GetSocketTransform(this->GetItemMesh());
 	FActorSpawnParameters params;
 	params.Owner = this;
-	GetWorld()->SpawnActor<ABullet>(ABullet::StaticClass(), socketTransform.GetLocation(), this->GetActorRotation(), params);
+	GetWorld()->SpawnActor<ABullet>((this->bulletClass) ? this->bulletClass : ABullet::StaticClass(), socketTransform.GetLocation(), this->GetActorRotation(), params);
 	this->bCanShoot = true;
 	FTimerHandle autoFireTimerHandle;
 	GetWorldTimerManager().SetTimer(autoFireTimerHandle, [&](){
 		if (this->bCanShoot) this->Shoot();
-	}, this->fireRate, false);
+	}, this->weaponStats.fireRate, false);
 }
 
 void AWeapon::StopShooting() {

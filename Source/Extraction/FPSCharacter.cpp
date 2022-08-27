@@ -61,20 +61,17 @@ void AFPSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 	PlayerInputComponent->BindAxis(TEXT("MoveRight"), this, &AFPSCharacter::MoveRight);
 	PlayerInputComponent->BindAxis(TEXT("Turn"), this, &AFPSCharacter::Turn);
 	PlayerInputComponent->BindAxis(TEXT("LookUp"), this, &AFPSCharacter::LookUp);
+	PlayerInputComponent->BindAxis(TEXT("Lean"), this, &AFPSCharacter::Lean);
+	PlayerInputComponent->BindAxis(TEXT("TurnRate"), this, &AFPSCharacter::TurnRate);
+	PlayerInputComponent->BindAxis(TEXT("LookUpRate"), this, &AFPSCharacter::LookUpRate);
 
 	PlayerInputComponent->BindAction(TEXT("Jump"), EInputEvent::IE_Pressed, this, &AFPSCharacter::JumpButtonPressed);
 	PlayerInputComponent->BindAction(TEXT("Jump"), EInputEvent::IE_Released, this, &ACharacter::StopJumping);
-
 	PlayerInputComponent->BindAction(TEXT("Crouch"), EInputEvent::IE_Pressed, this, &AFPSCharacter::CrouchButtonPressed);
 	PlayerInputComponent->BindAction(TEXT("Prone"), EInputEvent::IE_Pressed, this, &AFPSCharacter::ProneButtonPressed);
-
 	PlayerInputComponent->BindAction(TEXT("Sprint"), EInputEvent::IE_Pressed, this, &AFPSCharacter::SprintButtonPressed);
 	PlayerInputComponent->BindAction(TEXT("Sprint"), EInputEvent::IE_Released, this, &AFPSCharacter::SprintButtonReleased);
-
 	PlayerInputComponent->BindAction(TEXT("Reload"), EInputEvent::IE_Pressed, this, &AFPSCharacter::ReloadButtonPressed);
-
-	PlayerInputComponent->BindAxis(TEXT("Lean"), this, &AFPSCharacter::Lean);
-
 	PlayerInputComponent->BindAction(TEXT("Fire"), EInputEvent::IE_Pressed, this, &AFPSCharacter::FireButtonPressed);
 	PlayerInputComponent->BindAction(TEXT("Fire"), EInputEvent::IE_Released, this, &AFPSCharacter::FireButtonReleased);
 }
@@ -159,6 +156,16 @@ void AFPSCharacter::Turn(float axisValue) {
 void AFPSCharacter::LookUp(float axisValue) {
 	this->lookValue = axisValue;
 	this->lookValue *= 0.5f;
+	this->AddControllerPitchInput(this->lookValue);
+}
+
+void AFPSCharacter::TurnRate(float axisValue) {
+	this->turnValue = axisValue * 120.0f * GetWorld()->GetDeltaSeconds();
+	this->AddControllerYawInput(this->turnValue);
+}
+
+void AFPSCharacter::LookUpRate(float axisValue) {
+	this->lookValue = axisValue * 120.0f * GetWorld()->GetDeltaSeconds();
 	this->AddControllerPitchInput(this->lookValue);
 }
 

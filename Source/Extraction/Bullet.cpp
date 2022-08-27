@@ -11,8 +11,7 @@
 // Sets default values
 ABullet::ABullet() : 
 	velocity(0.0f), 
-	bulletLifeSpan(0.0f), 
-	speed(300.0f * 100.0f) 
+	bulletLifeSpan(0.0f)
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -25,9 +24,8 @@ ABullet::ABullet() :
 void ABullet::BeginPlay() {
 	Super::BeginPlay();
 
-	this->weapon = Cast<AWeapon>(this->GetOwner());
-	if (this->weapon) {
-		this->velocity = (this->weapon->GetActorRotation().Vector() * -1) * this->speed;
+	if (AWeapon* weapon = Cast<AWeapon>(this->GetOwner())) {
+		this->velocity = (weapon->GetActorRotation().Vector() * -1) * weapon->GetWeaponStats().bulletSpeed;
 	} else {
 		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("[ABULLET]: AWeapon* is NULL")));
 	}
@@ -36,8 +34,6 @@ void ABullet::BeginPlay() {
 // Called every frame
 void ABullet::Tick(float DeltaTime) {
 	Super::Tick(DeltaTime);
-
-	if (!this->weapon)  return;
 
 	FHitResult hitResult;
 	FVector start = this->GetActorLocation();
@@ -56,6 +52,5 @@ void ABullet::Tick(float DeltaTime) {
 		this->velocity += FVector(0.0f, 0.0f, -981.0f) * DeltaTime;
 	}
 	if (this->bulletLifeSpan > 10.0f) this->Destroy();
-
 }
 

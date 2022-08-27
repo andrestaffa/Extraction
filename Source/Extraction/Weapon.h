@@ -6,9 +6,18 @@
 #include "Item.h"
 #include "Weapon.generated.h"
 
-/**
- * 
- */
+
+USTRUCT(BlueprintType)
+struct FWeaponStats 
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float fireRate = 0.1f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float bulletSpeed = 350.0f * 100.0f;
+};
+
 UCLASS()
 class EXTRACTION_API AWeapon : public AItem
 {
@@ -29,11 +38,18 @@ public:
 
 private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Stats", meta = (AllowPrivateAccess = "true"))
-	float fireRate;
+	TSubclassOf<class ABullet> bulletClass;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Stats", meta = (AllowPrivateAccess = "true"))
+	FWeaponStats weaponStats;
+
 	bool bCanShoot;
 
 public:
 	void Shoot();
 	void StopShooting();
+
+// MARK: - Getters and Setters
+public:
+	FORCEINLINE FWeaponStats GetWeaponStats() { return this->weaponStats; }
 
 };

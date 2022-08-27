@@ -30,11 +30,7 @@ public:
 	UParticleSystem* impactParticles;
 
 private:
-	class AWeapon* weapon;
-
 	FVector velocity;
-
 	float bulletLifeSpan;
-	float speed;
-
+	
 };

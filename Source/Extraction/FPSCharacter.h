@@ -109,6 +109,8 @@ protected:
 	void MoveRight(float axisValue);
 	void Turn(float axisValue);
 	void LookUp(float axisValue); 
+	void TurnRate(float axisValue);
+	void LookUpRate(float axisValue);
 
 	// Crouching/Proning
 	void CrouchButtonPressed();

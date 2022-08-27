@@ -31,6 +31,7 @@ private:
 	USkeletalMeshComponent* itemMesh;
 
 
+// MARK: - Getters and Setters
 public:
 	FORCEINLINE USkeletalMeshComponent* GetItemMesh() { return this->itemMesh; }
 
