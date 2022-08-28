@@ -43,8 +43,8 @@ AFPSCharacter::AFPSCharacter() :
 void AFPSCharacter::BeginPlay() {
 	Super::BeginPlay();
 
-	this->NullChecks();
 	this->SpawnDefaultWeapon();
+	this->NullChecks();
 }
 
 // Called every frame
@@ -111,6 +111,7 @@ void AFPSCharacter::SpawnDefaultWeapon() {
 }
 
 void AFPSCharacter::FireButtonPressed() {
+	if (this->isReloading) return;
 	this->equippedWeapon->Shoot();
 }
 
@@ -119,7 +120,8 @@ void AFPSCharacter::FireButtonReleased() {
 }
 
 void AFPSCharacter::MovementUpdate() {
-	if (this->ADSEnabled || this->moveForwardValue <= -1.0f || (this->moveRightValue != 0.0f && this->moveForwardValue == 0.0f) || this->isVaulting || this->isClimbing) {
+	if (this->ADSEnabled || this->moveForwardValue <= -1.0f || (this->moveRightValue != 0.0f && this->moveForwardValue == 0.0f) || this->isVaulting || this->isClimbing 
+		|| this->equippedWeapon->GetWeaponStats().bCanShoot_readOnly) {
 		this->ToggleSprint(false);
 		return;
 	}
@@ -137,10 +139,10 @@ void AFPSCharacter::MovementUpdate() {
 }
 
 void AFPSCharacter::CancelReloadUpdate() {
+	// TODO: If equipped weapon still has bullets and shoot button pressed, then cancel reload.
 	if ((this->ADSEnabled || this->isSprinting) && this->reloadTimerHandle.IsValid()) {
 		this->isReloading = false;
-		GetWorldTimerManager().ClearTimer(this->reloadTimerHandle);
-		this->reloadTimerHandle.Invalidate();
+		this->CancelTimer(this->reloadTimerHandle);
 	}
 }
 
@@ -255,6 +257,7 @@ void AFPSCharacter::ReloadButtonPressed() {
 	if (this->isReloading) return;
 	if (!this->isSprinting && !this->ADSEnabled) {
 		this->isReloading = true;
+		this->equippedWeapon->StopShooting();
 		GetWorldTimerManager().SetTimer(this->reloadTimerHandle, [&](){
 			this->isReloading = false;
 		}, 2.17f, false);
@@ -318,6 +321,7 @@ void AFPSCharacter::Vault() {
 			this->PlayMantleAnimation(this->vaultMontage, 0.7f, this->isVaulting);
 		}
 		this->isReloading = false;
+		this->CancelTimer(this->reloadTimerHandle);
 	}
 }
 
@@ -335,6 +339,7 @@ void AFPSCharacter::Climb() {
 		float distanceToTop = boxExtents.Z - (abs(origin.Z - hitResult.Location.Z));
 		if (hitResult.ImpactNormal.Z >= 1.0f || distanceToTop <= this->movementSettings.wallToLookDistance) {
 			this->isReloading = false;
+			this->CancelTimer(this->reloadTimerHandle);
 			this->SetActorLocation(FVector(this->GetActorLocation().X, this->GetActorLocation().Y, boxExtents.Z + 50.0f));
 			this->PlayMantleAnimation(this->climbMontage, 1.17f, this->isClimbing);
 		}
@@ -353,8 +358,7 @@ void AFPSCharacter::Slide() {
 bool AFPSCharacter::SlideCancel() {
 	if (this->isSliding && this->slideTimerHandle.IsValid()) {
 		this->isSliding = false;
-		GetWorldTimerManager().ClearTimer(this->slideTimerHandle);
-		this->slideTimerHandle.Invalidate();
+		this->CancelTimer(this->slideTimerHandle);
 		return true;
 	}
 	return false;
@@ -386,6 +390,13 @@ void AFPSCharacter::PlayMantleAnimation(UAnimMontage* montageAnim, float animTim
 		}, animTime, false);
 	} else {
 		GEngine->AddOnScreenDebugMessage(-1, 20.0f, FColor::Red, FString::Printf(TEXT("[AFPSCharacter]: montageAnim* is NULL")), false);
+	}
+}
+
+void AFPSCharacter::CancelTimer(FTimerHandle& timerHandle) {
+	GetWorldTimerManager().ClearTimer(timerHandle);
+	if (timerHandle.IsValid()) {
+		timerHandle.Invalidate();
 	}
 }
 

@@ -224,4 +224,12 @@ protected:
 
 // MARK: - [END] Movement Variables/Functions
 
+// MARK: - [START] Helpers
+
+private:
+	void CancelTimer(FTimerHandle& timerHandle);
+
+// MARK: - [END] Helpers
+
+
 };

@@ -58,6 +58,6 @@ void ABullet::Tick(float DeltaTime) {
 }
 
 void ABullet::NullCheck() {
-	if (!this->impactParticles) GEngine->AddOnScreenDebugMessage(-1, 20.0f, FColor::Red, FString::Printf(TEXT("[ABULLET]: impactParticles* is NULL")), false);
+	//if (!this->impactParticles) GEngine->AddOnScreenDebugMessage(-1, 20.0f, FColor::Red, FString::Printf(TEXT("[ABULLET]: impactParticles* is NULL")), false);
 }
 

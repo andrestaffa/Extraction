@@ -9,8 +9,7 @@
 #include "Camera/CameraShakeBase.h"
 
 // Sets default values
-AWeapon::AWeapon() :
-	bCanShoot(false)
+AWeapon::AWeapon()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -19,6 +18,9 @@ AWeapon::AWeapon() :
 // Called when the game starts or when spawned
 void AWeapon::BeginPlay() {
 	Super::BeginPlay();
+
+	this->playerController = UGameplayStatics::GetPlayerController(this, 0);
+	this->barrelSocket = this->GetItemMesh()->GetSocketByName("Muzzle");
 
 	this->NullChecks();
 }
@@ -31,39 +33,39 @@ void AWeapon::Tick(float DeltaTime) {
 }
 
 void AWeapon::NullChecks() {
+	if (!this->playerController) GEngine->AddOnScreenDebugMessage(-1, 20.0f, FColor::Red, FString::Printf(TEXT("[AWeapon]: playerController* is NULL")), false);
+	if (!this->barrelSocket) GEngine->AddOnScreenDebugMessage(-1, 20.0f, FColor::Red, FString::Printf(TEXT("[AWeapon]: barrelSocket* is NULL")), false);
 	if (!this->bulletClass) GEngine->AddOnScreenDebugMessage(-1, 20.0f, FColor::Red, FString::Printf(TEXT("[AWeapon]: bulletClass* is NULL")), false);
 	if (!this->recoilCameraShakeClass) GEngine->AddOnScreenDebugMessage(-1, 20.0f, FColor::Red, FString::Printf(TEXT("[AWeapon]: recoilCameraShakeClass* is NULL")), false);
 }
 
 void AWeapon::RecoilUpdate() {
-	APlayerController* controller = UGameplayStatics::GetPlayerController(this, 0);
-	if (!this->bCanShoot || !controller) return;
-	controller->AddPitchInput(-this->weaponStats.verticalRecoil * GetWorld()->GetDeltaSeconds());
+	if (!this->weaponStats.bCanShoot_readOnly || !this->playerController) return;
+	this->playerController->AddPitchInput(-this->weaponStats.verticalRecoil * GetWorld()->GetDeltaSeconds());
 	int rand = FMath::RandRange(0, 1);
 	float yaw = (rand == 1) ? FMath::RandRange(this->weaponStats.minHorizontalRecoil, this->weaponStats.maxHorizontalRecoil) : FMath::RandRange(-this->weaponStats.maxHorizontalRecoil, -this->weaponStats.minHorizontalRecoil);
-	controller->AddYawInput(yaw * GetWorld()->GetDeltaSeconds());
+	this->playerController->AddYawInput(yaw * GetWorld()->GetDeltaSeconds());
 }
 
 void AWeapon::Shoot() {
-	const USkeletalMeshSocket* barrelSocket = this->GetItemMesh()->GetSocketByName("Muzzle");
-	if (!barrelSocket) {
+	if (!this->barrelSocket) {
 		GEngine->AddOnScreenDebugMessage(-1, 20.0f, FColor::Red, FString::Printf(TEXT("[AWeapon]: barrelSocket* is NULL")), false);
 		return;
 	}
-	FTransform socketTransform = barrelSocket->GetSocketTransform(this->GetItemMesh());
+	FTransform socketTransform = this->barrelSocket->GetSocketTransform(this->GetItemMesh());
 	FActorSpawnParameters params;
 	params.Owner = this;
 	GetWorld()->SpawnActor<ABullet>((this->bulletClass) ? this->bulletClass : ABullet::StaticClass(), socketTransform.GetLocation(), this->GetActorForwardVector().Rotation(), params);
 	if (this->recoilCameraShakeClass) GetWorld()->GetFirstPlayerController()->ClientStartCameraShake(this->recoilCameraShakeClass);
-	this->bCanShoot = true;
+	this->weaponStats.bCanShoot_readOnly = true;
 	FTimerHandle autoFireTimerHandle;
 	GetWorldTimerManager().SetTimer(autoFireTimerHandle, [&](){
-		if (this->bCanShoot) this->Shoot();
+		if (this->weaponStats.bCanShoot_readOnly) this->Shoot();
 	}, this->weaponStats.fireRate, false);
 }
 
 void AWeapon::StopShooting() {
-	this->bCanShoot = false;
+	this->weaponStats.bCanShoot_readOnly = false;
 }
 
 const FVector AWeapon::BulletDirection() {

@@ -26,6 +26,9 @@ struct FWeaponStats
 	float minBulletSpread = -0.1f;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float maxBulletSpread = 0.1f;
+
+	UPROPERTY(VisibleAnywhere)
+	bool bCanShoot_readOnly = false;
 };
 
 UCLASS()
@@ -55,7 +58,8 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Stats", meta = (AllowPrivateAccess = "true"))
 	FWeaponStats weaponStats;
 
-	bool bCanShoot;
+	class APlayerController* playerController;
+	const class USkeletalMeshSocket* barrelSocket;
 
 	// SET IN CHARACTER BLUEPRINT
 	UPROPERTY(BlueprintReadWrite, Category = "Stats", meta = (AllowPrivateAccess = "true"))
