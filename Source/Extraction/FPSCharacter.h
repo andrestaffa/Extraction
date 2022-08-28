@@ -6,6 +6,74 @@
 #include "GameFramework/Character.h"
 #include "FPSCharacter.generated.h"
 
+USTRUCT(BlueprintType)
+struct FSensitivitySettings
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(UIMin = "1.0", UIMax = "100.0"))
+	float mouseSensitivity = 35.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(UIMin = "0.1", UIMax = "1.0"))
+	float mouseADSSensitivityMultiplier = 0.75f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(UIMin = "1.0", UIMax = "20.0"))
+	float controllerVerticalSensitivity = 6.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(UIMin = "1.0", UIMax = "20.0"))
+	float controllerHorizontalSensitivity = 6.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(UIMin = "0.1", UIMax = "1.0"))
+	float controllerADSSensitivityMultiplier = 1.0f;
+};
+
+USTRUCT(BlueprintType)
+struct FMovementSettings
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float sprintSpeed = 600.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float walkSpeed = 350.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float crouchSpeed = 250.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float slideSpeed = 500.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float jumpHeight = 600.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float adsMoveForwardWalkSpeedMultiplier = 0.6f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float adsMoveRightWalkSpeedMultiplier = 0.6f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float sprintMoveRightStrafeSpeedMultiplier = 0.4f;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	float crouchInitializeSpeed = sprintSpeed - 50.0f;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	float startSlideCancelSpeed = walkSpeed - 100.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float parkourReachDistance = 200.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float vaultingReachDistance = 125.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float climbReachDistance = 200.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float playerWallVaultAngleDegrees = 155.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float wallThinknessVaultToleranceDistance = 110.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float wallToLookDistance = 30.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float eyePosOffset = 70.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float legPosOffset = -70.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float leanDistance = 20.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float leanInterpTime = 5.0f;
+
+};
+
 UCLASS()
 class EXTRACTION_API AFPSCharacter : public ACharacter
 {
@@ -35,10 +103,18 @@ private:
 	// Weapon
 	UPROPERTY(BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	class AWeapon* equippedWeapon;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	TSubclassOf<class AWeapon> weaponClass;
 
+	// Settings
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings", meta = (AllowPrivateAccess = "true"))
+	FSensitivitySettings sensitivitySettings;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings", meta = (AllowPrivateAccess = "true"))
+	FMovementSettings movementSettings;
+
 private:
+	void NullChecks();
+
 	void SpawnDefaultWeapon();
 	void FireButtonPressed();
 	void FireButtonReleased();
@@ -47,6 +123,12 @@ private:
 
 // MARK: - [START] Movement Variables/Functions
 private:
+
+	// Camera Shake
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<class UCameraShakeBase> headBobWalkCameraShake;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<class UCameraShakeBase> headBobSprintCameraShake;
 
 	// Mouse Movement
 	UPROPERTY(BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
@@ -94,6 +176,8 @@ private:
 	// (Aiming) SET IN BLUEPRINTS
 	UPROPERTY(BlueprintReadWrite, Category = "Movement", meta = (AllowPrivateAccess = "true"))
 	bool ADSEnabled;
+	UPROPERTY(BlueprintReadWrite, Category = "Movement", meta = (AllowPrivateAccess = "true"))
+	float ADSValue;
 
 protected:
 
@@ -124,7 +208,7 @@ protected:
 	void Climb();
 	void Slide();
 	bool SlideCancel();
-	void SlideUpdate(float DeltaTime);
+	void SlideUpdate();
 	void PlayMantleAnimation(class UAnimMontage* montageAnim, float animTime, bool& inAnimBool);
 
 	// Sprinting

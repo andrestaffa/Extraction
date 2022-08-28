@@ -67,6 +67,8 @@ public:
 	const FVector BulletDirection();
 
 private:
+	void NullChecks();
+
 	void RecoilUpdate();
 
 // MARK: - Getters and Setters

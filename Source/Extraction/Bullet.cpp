@@ -10,6 +10,7 @@
 
 // Sets default values
 ABullet::ABullet() : 
+	bulletLifeTime(10.0f),
 	velocity(0.0f), 
 	bulletLifeSpan(0.0f)
 {
@@ -27,8 +28,10 @@ void ABullet::BeginPlay() {
 	if (AWeapon* weapon = Cast<AWeapon>(this->GetOwner())) {
 		this->velocity = weapon->BulletDirection() * weapon->GetWeaponStats().bulletSpeed;
 	} else {
-		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("[ABULLET]: AWeapon* is NULL")));
+		GEngine->AddOnScreenDebugMessage(-1, 20.0f, FColor::Red, FString::Printf(TEXT("[ABULLET]: AWeapon* is NULL")), false);
 	}
+
+	this->NullCheck();
 }
 
 // Called every frame
@@ -51,6 +54,10 @@ void ABullet::Tick(float DeltaTime) {
 		SetActorLocation(end);
 		this->velocity += FVector(0.0f, 0.0f, -981.0f) * DeltaTime;
 	}
-	if (this->bulletLifeSpan > 10.0f) this->Destroy();
+	if (this->bulletLifeSpan > this->bulletLifeTime) this->Destroy();
+}
+
+void ABullet::NullCheck() {
+	if (!this->impactParticles) GEngine->AddOnScreenDebugMessage(-1, 20.0f, FColor::Red, FString::Printf(TEXT("[ABULLET]: impactParticles* is NULL")), false);
 }
 

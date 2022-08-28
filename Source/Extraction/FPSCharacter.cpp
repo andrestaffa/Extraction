@@ -4,10 +4,9 @@
 #include "FPSCharacter.h"
 #include "Weapon.h"
 
-#include "Misc/OutputDeviceNull.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/CharacterMovementComponent.h"
-
+#include "Camera/CameraShakeBase.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
@@ -26,21 +25,25 @@ AFPSCharacter::AFPSCharacter() :
 	runButtonPressed(false),
 	isReloading(false),
 	leanValue(0.0f),
-	ADSEnabled(false)
+	ADSEnabled(false),
+	ADSValue(0.0f)
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	TArray<UCapsuleComponent*> components;
+	this->GetComponents(components, false);
+	this->capsuleComp = components[0];
+
+	this->GetCharacterMovement()->MaxWalkSpeedCrouched = this->movementSettings.crouchSpeed;
+	this->GetCharacterMovement()->JumpZVelocity = this->movementSettings.jumpHeight;
 }
 
 // Called when the game starts or when spawned
 void AFPSCharacter::BeginPlay() {
 	Super::BeginPlay();
 
-	TArray<UCapsuleComponent*> components;
-	this->GetComponents(components, false);
-	this->capsuleComp = components[0];
-	
+	this->NullChecks();
 	this->SpawnDefaultWeapon();
 }
 
@@ -48,7 +51,7 @@ void AFPSCharacter::BeginPlay() {
 void AFPSCharacter::Tick(float DeltaTime) {
 	Super::Tick(DeltaTime);
 
-	this->SlideUpdate(DeltaTime);
+	this->SlideUpdate();
 	this->CancelReloadUpdate();
 	this->MovementUpdate();
 }
@@ -76,16 +79,34 @@ void AFPSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 	PlayerInputComponent->BindAction(TEXT("Fire"), EInputEvent::IE_Released, this, &AFPSCharacter::FireButtonReleased);
 }
 
+void AFPSCharacter::NullChecks() {
+	if (!this->capsuleComp) GEngine->AddOnScreenDebugMessage(-1, 20.0f, FColor::Red, FString::Printf(TEXT("[AFPSCharacter]: capsuleComp* is NULL")), false);
+	if (!this->headBobWalkCameraShake) GEngine->AddOnScreenDebugMessage(-1, 20.0f, FColor::Red, FString::Printf(TEXT("[AFPSCharacter]: headBobWalkCameraShake* is NULL")), false);
+	if (!this->headBobSprintCameraShake) GEngine->AddOnScreenDebugMessage(-1, 20.0f, FColor::Red, FString::Printf(TEXT("[AFPSCharacter]: headBobSprintCameraShake* is NULL")), false);
+	if (!this->vaultMontage) GEngine->AddOnScreenDebugMessage(-1, 20.0f, FColor::Red, FString::Printf(TEXT("[AFPSCharacter]: vaultMontage* is NULL")), false);
+	if (!this->climbMontage) GEngine->AddOnScreenDebugMessage(-1, 20.0f, FColor::Red, FString::Printf(TEXT("[AFPSCharacter]: climbMontage* is NULL")), false);
+}
+
 void AFPSCharacter::HandleCameraShake() {
-	FOutputDeviceNull ar;
-	const FString command = FString::Printf(TEXT("HandleCameraShake"));
-	this->CallFunctionByNameWithArguments(*command, ar, NULL, true);
+	if (this->isSprinting) {
+		if (this->headBobSprintCameraShake)
+			GetWorld()->GetFirstPlayerController()->ClientStartCameraShake(this->headBobSprintCameraShake);
+	} else {
+		if (this->headBobWalkCameraShake)
+			GetWorld()->GetFirstPlayerController()->ClientStartCameraShake(this->headBobWalkCameraShake, 1.5f);
+	}
 }
 
 void AFPSCharacter::SpawnDefaultWeapon() {
-	this->equippedWeapon = GetWorld()->SpawnActor<AWeapon>(this->weaponClass, this->GetActorTransform());
-	if (this->equippedWeapon) {
-		this->equippedWeapon->AttachToComponent(this->GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, FName("RightHand"));
+	if (this->weaponClass) {
+		this->equippedWeapon = GetWorld()->SpawnActor<AWeapon>(this->weaponClass, this->GetActorTransform());
+		if (this->equippedWeapon) {
+			this->equippedWeapon->AttachToComponent(this->GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, FName("RightHand"));
+		} else {
+			GEngine->AddOnScreenDebugMessage(-1, 20.0f, FColor::Red, FString::Printf(TEXT("[AFPSCharacter]: equippedWeapon* is NULL")), false);
+		}
+	} else {
+		GEngine->AddOnScreenDebugMessage(-1, 20.0f, FColor::Red, FString::Printf(TEXT("[AFPSCharacter]: weaponClass* is NULL")), false);
 	}
 }
 
@@ -116,9 +137,10 @@ void AFPSCharacter::MovementUpdate() {
 }
 
 void AFPSCharacter::CancelReloadUpdate() {
-	if (this->ADSEnabled || this->isSprinting) {
+	if ((this->ADSEnabled || this->isSprinting) && this->reloadTimerHandle.IsValid()) {
 		this->isReloading = false;
 		GetWorldTimerManager().ClearTimer(this->reloadTimerHandle);
+		this->reloadTimerHandle.Invalidate();
 	}
 }
 
@@ -128,7 +150,7 @@ void AFPSCharacter::MoveForward(float axisValue) {
 		const FRotator rotation = this->Controller->GetControlRotation();
 		const FRotator yawRotation = FRotator(0.0f, rotation.Yaw, 0.0f);
 		const FVector direction = FVector(FRotationMatrix(yawRotation).GetUnitAxis(EAxis::X));
-		if (this->ADSEnabled) this->moveForwardValue *= 0.6f;
+		if (this->ADSEnabled) this->moveForwardValue *= this->movementSettings.adsMoveForwardWalkSpeedMultiplier;
 		this->AddMovementInput(direction, this->moveForwardValue);
 		this->HandleCameraShake();
 	}
@@ -140,8 +162,8 @@ void AFPSCharacter::MoveRight(float axisValue) {
 		const FRotator rotation = this->Controller->GetControlRotation();
 		const FRotator yawRotation = FRotator(0.0f, rotation.Yaw, 0.0f);
 		const FVector direction = FVector(FRotationMatrix(yawRotation).GetUnitAxis(EAxis::Y));
-		if (this->ADSEnabled) this->moveRightValue *= 0.6f;
-		if (this->isSprinting) this->moveRightValue *= 0.4f;
+		if (this->ADSEnabled) this->moveRightValue *= this->movementSettings.adsMoveRightWalkSpeedMultiplier;
+		if (this->isSprinting) this->moveRightValue *= this->movementSettings.sprintMoveRightStrafeSpeedMultiplier;
 		this->AddMovementInput(direction, this->moveRightValue);
 		this->HandleCameraShake();
 	}
@@ -149,29 +171,33 @@ void AFPSCharacter::MoveRight(float axisValue) {
 
 void AFPSCharacter::Turn(float axisValue) {
 	this->turnValue = axisValue;
-	this->turnValue *= 0.5f;
+	this->turnValue *= (this->sensitivitySettings.mouseSensitivity / 100.0f);
+	if (this->ADSEnabled) this->turnValue *= this->sensitivitySettings.mouseADSSensitivityMultiplier;
 	this->AddControllerYawInput(this->turnValue);
 }
 
 void AFPSCharacter::LookUp(float axisValue) {
 	this->lookValue = axisValue;
-	this->lookValue *= 0.5f;
+	this->lookValue *= (this->sensitivitySettings.mouseSensitivity / 100.0f);
+	if (this->ADSEnabled) this->lookValue *= this->sensitivitySettings.mouseADSSensitivityMultiplier;
 	this->AddControllerPitchInput(this->lookValue);
 }
 
 void AFPSCharacter::TurnRate(float axisValue) {
-	this->turnValue = axisValue * 120.0f * GetWorld()->GetDeltaSeconds();
+	this->turnValue = axisValue * (this->sensitivitySettings.controllerHorizontalSensitivity * 10.0f) * GetWorld()->GetDeltaSeconds();
+	if (this->ADSEnabled) this->turnValue *= this->sensitivitySettings.controllerADSSensitivityMultiplier;
 	this->AddControllerYawInput(this->turnValue);
 }
 
 void AFPSCharacter::LookUpRate(float axisValue) {
-	this->lookValue = axisValue * 120.0f * GetWorld()->GetDeltaSeconds();
+	this->lookValue = axisValue * (this->sensitivitySettings.controllerHorizontalSensitivity * 10.0f) * GetWorld()->GetDeltaSeconds();
+	if (this->ADSEnabled) this->lookValue *= this->sensitivitySettings.controllerADSSensitivityMultiplier;
 	this->AddControllerPitchInput(this->lookValue);
 }
 
 void AFPSCharacter::CrouchButtonPressed() {
 	if (this->SlideCancel()) return;
-	if (this->GetVelocity().Size() >= 550.0f) {
+	if (this->GetVelocity().Size() >= this->movementSettings.crouchInitializeSpeed) {
 		this->Slide();
 	} else {
 		this->ToggleCrouch(!this->isCrouching);
@@ -215,11 +241,11 @@ void AFPSCharacter::SprintButtonReleased() {
 
 void AFPSCharacter::ToggleSprint(bool toggle) {
 	if (toggle) {
-		this->GetCharacterMovement()->MaxWalkSpeed = 600.0f;
+		this->GetCharacterMovement()->MaxWalkSpeed = this->movementSettings.sprintSpeed;
 		this->isSprinting = true;
 	} else {
 		if (!this->isSliding) {
-			this->GetCharacterMovement()->MaxWalkSpeed = 350.0f;
+			this->GetCharacterMovement()->MaxWalkSpeed = this->movementSettings.walkSpeed;
 			this->isSprinting = false;
 		}
 	}
@@ -237,26 +263,25 @@ void AFPSCharacter::ReloadButtonPressed() {
 
 void AFPSCharacter::Lean(float axisValue) {
 	if (axisValue <= -1.0f) {
-		this->leanValue = FMath::FInterpTo(this->leanValue, -20.0f, GetWorld()->DeltaTimeSeconds, 5.0f);
+		this->leanValue = FMath::FInterpTo(this->leanValue, -this->movementSettings.leanDistance, GetWorld()->DeltaTimeSeconds, this->movementSettings.leanInterpTime);
 	} else if (axisValue >= 1.0f) {
-		this->leanValue = FMath::FInterpTo(this->leanValue, 20.0f, GetWorld()->DeltaTimeSeconds, 5.0f);
+		this->leanValue = FMath::FInterpTo(this->leanValue, this->movementSettings.leanDistance, GetWorld()->DeltaTimeSeconds, this->movementSettings.leanInterpTime);
 	} else {
-		this->leanValue = FMath::FInterpTo(this->leanValue, 0.0f, GetWorld()->DeltaTimeSeconds, 5.0f);
+		this->leanValue = FMath::FInterpTo(this->leanValue, 0.0f, GetWorld()->DeltaTimeSeconds, this->movementSettings.leanInterpTime);
 	}
 }
 
 void AFPSCharacter::SetupParkour() {
 	FHitResult hitResult;
-	FVector start = this->GetActorLocation() + FVector(0.0f, 0.0f, -70.0f);
-	FVector end = start + this->GetActorForwardVector() * 200.0f;
+	FVector start = this->GetActorLocation() + FVector(0.0f, 0.0f, this->movementSettings.legPosOffset);
+	FVector end = start + this->GetActorForwardVector() * this->movementSettings.parkourReachDistance;
 	FCollisionObjectQueryParams params;
 	params.ObjectTypesToQuery = params.AllStaticObjects;
 	if (GetWorld()->LineTraceSingleByObjectType(hitResult, start, end, params)) {
 		if (hitResult.GetActor()) {
 			FVector origin;
 			FVector boxExtents;
-			if (hitResult.GetActor()) 
-				hitResult.GetActor()->GetActorBounds(false, origin, boxExtents, false);
+			hitResult.GetActor()->GetActorBounds(false, origin, boxExtents, false);	
 			if (boxExtents.Z <= (this->capsuleComp->GetScaledCapsuleHalfHeight() / 2.0f)) {
 				this->Vault();
 			} else {
@@ -269,8 +294,8 @@ void AFPSCharacter::SetupParkour() {
 void AFPSCharacter::Vault() {
 	if (this->isVaulting) return;
 	FHitResult hitResult;
-	FVector start = this->GetActorLocation() + FVector(0.0f, 0.0f, -70.0f);
-	FVector end = start + this->GetActorRotation().Vector() * 125.0f;
+	FVector start = this->GetActorLocation() + FVector(0.0f, 0.0f, this->movementSettings.legPosOffset);
+	FVector end = start + this->GetActorRotation().Vector() * this->movementSettings.vaultingReachDistance;
 	FCollisionObjectQueryParams params;
 	params.ObjectTypesToQuery = params.AllStaticObjects;
 	if (GetWorld()->LineTraceSingleByObjectType(hitResult, start, end, params)) {
@@ -281,13 +306,12 @@ void AFPSCharacter::Vault() {
 		angle = angle * (180.0f / PI);
 		FHitResult wallThickHitResult;
 		start = hitResult.ImpactPoint;
-		end = start + hitResult.ImpactNormal * -110.0f;
+		end = start + hitResult.ImpactNormal * -this->movementSettings.wallThinknessVaultToleranceDistance;
 		bool wallIsThick = GetWorld()->LineTraceSingleByObjectType(wallThickHitResult, start, end, params);
-		if (angle < 155.0f || !this->isSprinting || !wallIsThick) {
+		if (angle < this->movementSettings.playerWallVaultAngleDegrees || !this->isSprinting || !wallIsThick) {
 			FVector origin;
 			FVector boxExtents;
-			if (hitResult.GetActor()) 
-				hitResult.GetActor()->GetActorBounds(false, origin, boxExtents, false);
+			if (hitResult.GetActor()) hitResult.GetActor()->GetActorBounds(false, origin, boxExtents, false);
 			this->SetActorLocation(FVector(this->GetActorLocation().X, this->GetActorLocation().Y, boxExtents.Z + 10.0f));
 			this->PlayMantleAnimation(this->climbMontage, 1.17f, this->isClimbing);
 		} else {
@@ -300,8 +324,8 @@ void AFPSCharacter::Vault() {
 void AFPSCharacter::Climb() {
 	if (this->isClimbing) return;
 	FHitResult hitResult;
-	FVector start = this->GetActorLocation() + FVector(0.0f, 0.0f, 70.0f);
-	FVector end = start + this->GetControlRotation().Vector() * 200.0f;
+	FVector start = this->GetActorLocation() + FVector(0.0f, 0.0f, this->movementSettings.eyePosOffset);
+	FVector end = start + this->GetControlRotation().Vector() * this->movementSettings.climbReachDistance;
 	FCollisionObjectQueryParams params;
 	params.ObjectTypesToQuery = params.AllStaticObjects;
 	if (GetWorld()->LineTraceSingleByObjectType(hitResult, start, end, params)) {
@@ -309,7 +333,7 @@ void AFPSCharacter::Climb() {
 		FVector boxExtents;
 		if (hitResult.GetActor()) hitResult.GetActor()->GetActorBounds(false, origin, boxExtents, false);
 		float distanceToTop = boxExtents.Z - (abs(origin.Z - hitResult.Location.Z));
-		if (hitResult.ImpactNormal.Z >= 1.0f || distanceToTop <= 30.0f) {
+		if (hitResult.ImpactNormal.Z >= 1.0f || distanceToTop <= this->movementSettings.wallToLookDistance) {
 			this->isReloading = false;
 			this->SetActorLocation(FVector(this->GetActorLocation().X, this->GetActorLocation().Y, boxExtents.Z + 50.0f));
 			this->PlayMantleAnimation(this->climbMontage, 1.17f, this->isClimbing);
@@ -327,20 +351,21 @@ void AFPSCharacter::Slide() {
 }
 
 bool AFPSCharacter::SlideCancel() {
-	if (this->isSliding) {
+	if (this->isSliding && this->slideTimerHandle.IsValid()) {
 		this->isSliding = false;
 		GetWorldTimerManager().ClearTimer(this->slideTimerHandle);
+		this->slideTimerHandle.Invalidate();
 		return true;
 	}
 	return false;
 }
 
-void AFPSCharacter::SlideUpdate(float DeltaTime) {
-	if (this->isSliding && this->GetVelocity().Size() < 250.0f) {
+void AFPSCharacter::SlideUpdate() {
+	if (this->isSliding && this->GetVelocity().Size() < this->movementSettings.startSlideCancelSpeed) {
 		this->SlideCancel();
 		return;
 	}
-	if (this->isSliding) this->GetCharacterMovement()->MaxWalkSpeed = 500.0f;
+	if (this->isSliding) this->GetCharacterMovement()->MaxWalkSpeed = this->movementSettings.slideSpeed;
 }
 
 void AFPSCharacter::PlayMantleAnimation(UAnimMontage* montageAnim, float animTime, bool& inAnimBool) {
@@ -359,6 +384,8 @@ void AFPSCharacter::PlayMantleAnimation(UAnimMontage* montageAnim, float animTim
 				this->SetActorLocation(this->GetActorLocation() + this->GetActorForwardVector() * 50.0f);
 			}
 		}, animTime, false);
+	} else {
+		GEngine->AddOnScreenDebugMessage(-1, 20.0f, FColor::Red, FString::Printf(TEXT("[AFPSCharacter]: montageAnim* is NULL")), false);
 	}
 }
 

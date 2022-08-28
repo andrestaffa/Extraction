@@ -19,6 +19,8 @@ AWeapon::AWeapon() :
 // Called when the game starts or when spawned
 void AWeapon::BeginPlay() {
 	Super::BeginPlay();
+
+	this->NullChecks();
 }
 
 // Called every frame
@@ -28,9 +30,14 @@ void AWeapon::Tick(float DeltaTime) {
 	this->RecoilUpdate();
 }
 
+void AWeapon::NullChecks() {
+	if (!this->bulletClass) GEngine->AddOnScreenDebugMessage(-1, 20.0f, FColor::Red, FString::Printf(TEXT("[AWeapon]: bulletClass* is NULL")), false);
+	if (!this->recoilCameraShakeClass) GEngine->AddOnScreenDebugMessage(-1, 20.0f, FColor::Red, FString::Printf(TEXT("[AWeapon]: recoilCameraShakeClass* is NULL")), false);
+}
+
 void AWeapon::RecoilUpdate() {
-	if (!this->bCanShoot || !UGameplayStatics::GetPlayerController(this, 0)) return;
 	APlayerController* controller = UGameplayStatics::GetPlayerController(this, 0);
+	if (!this->bCanShoot || !controller) return;
 	controller->AddPitchInput(-this->weaponStats.verticalRecoil * GetWorld()->GetDeltaSeconds());
 	int rand = FMath::RandRange(0, 1);
 	float yaw = (rand == 1) ? FMath::RandRange(this->weaponStats.minHorizontalRecoil, this->weaponStats.maxHorizontalRecoil) : FMath::RandRange(-this->weaponStats.maxHorizontalRecoil, -this->weaponStats.minHorizontalRecoil);
@@ -39,11 +46,15 @@ void AWeapon::RecoilUpdate() {
 
 void AWeapon::Shoot() {
 	const USkeletalMeshSocket* barrelSocket = this->GetItemMesh()->GetSocketByName("Muzzle");
+	if (!barrelSocket) {
+		GEngine->AddOnScreenDebugMessage(-1, 20.0f, FColor::Red, FString::Printf(TEXT("[AWeapon]: barrelSocket* is NULL")), false);
+		return;
+	}
 	FTransform socketTransform = barrelSocket->GetSocketTransform(this->GetItemMesh());
 	FActorSpawnParameters params;
 	params.Owner = this;
 	GetWorld()->SpawnActor<ABullet>((this->bulletClass) ? this->bulletClass : ABullet::StaticClass(), socketTransform.GetLocation(), this->GetActorForwardVector().Rotation(), params);
-	GetWorld()->GetFirstPlayerController()->ClientStartCameraShake(this->recoilCameraShakeClass);
+	if (this->recoilCameraShakeClass) GetWorld()->GetFirstPlayerController()->ClientStartCameraShake(this->recoilCameraShakeClass);
 	this->bCanShoot = true;
 	FTimerHandle autoFireTimerHandle;
 	GetWorldTimerManager().SetTimer(autoFireTimerHandle, [&](){
