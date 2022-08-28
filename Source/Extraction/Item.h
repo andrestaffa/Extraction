@@ -33,6 +33,6 @@ private:
 
 // MARK: - Getters and Setters
 public:
-	FORCEINLINE USkeletalMeshComponent* GetItemMesh() { return this->itemMesh; }
+	FORCEINLINE USkeletalMeshComponent* GetItemMesh() const { return this->itemMesh; }
 
 };

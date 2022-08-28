@@ -25,7 +25,7 @@ void ABullet::BeginPlay() {
 	Super::BeginPlay();
 
 	if (AWeapon* weapon = Cast<AWeapon>(this->GetOwner())) {
-		this->velocity = (weapon->GetActorRotation().Vector() * -1) * weapon->GetWeaponStats().bulletSpeed;
+		this->velocity = weapon->BulletDirection() * weapon->GetWeaponStats().bulletSpeed;
 	} else {
 		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("[ABULLET]: AWeapon* is NULL")));
 	}

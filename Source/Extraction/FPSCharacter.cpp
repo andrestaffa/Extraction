@@ -77,7 +77,6 @@ void AFPSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 }
 
 void AFPSCharacter::HandleCameraShake() {
-	// TODO: Write This function in C++
 	FOutputDeviceNull ar;
 	const FString command = FString::Printf(TEXT("HandleCameraShake"));
 	this->CallFunctionByNameWithArguments(*command, ar, NULL, true);
@@ -99,7 +98,7 @@ void AFPSCharacter::FireButtonReleased() {
 }
 
 void AFPSCharacter::MovementUpdate() {
-	if (this->ADSEnabled || this->moveForwardValue <= -1.0f || this->moveRightValue != 0.0f || this->isVaulting || this->isClimbing) {
+	if (this->ADSEnabled || this->moveForwardValue <= -1.0f || (this->moveRightValue != 0.0f && this->moveForwardValue == 0.0f) || this->isVaulting || this->isClimbing) {
 		this->ToggleSprint(false);
 		return;
 	}
@@ -142,6 +141,7 @@ void AFPSCharacter::MoveRight(float axisValue) {
 		const FRotator yawRotation = FRotator(0.0f, rotation.Yaw, 0.0f);
 		const FVector direction = FVector(FRotationMatrix(yawRotation).GetUnitAxis(EAxis::Y));
 		if (this->ADSEnabled) this->moveRightValue *= 0.6f;
+		if (this->isSprinting) this->moveRightValue *= 0.4f;
 		this->AddMovementInput(direction, this->moveRightValue);
 		this->HandleCameraShake();
 	}

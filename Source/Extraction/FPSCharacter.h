@@ -33,7 +33,7 @@ private:
 	class UCapsuleComponent* capsuleComp;
 
 	// Weapon
-	UPROPERTY(BlueprintReadWrite, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	class AWeapon* equippedWeapon;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	TSubclassOf<class AWeapon> weaponClass;
