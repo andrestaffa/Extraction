@@ -31,7 +31,7 @@ void ABullet::BeginPlay() {
 		GEngine->AddOnScreenDebugMessage(-1, 20.0f, FColor::Red, FString::Printf(TEXT("[ABULLET]: AWeapon* is NULL")), false);
 	}
 
-	this->NullCheck();
+	this->NullChecks();
 }
 
 // Called every frame
@@ -57,7 +57,7 @@ void ABullet::Tick(float DeltaTime) {
 	if (this->bulletLifeSpan > this->bulletLifeTime) this->Destroy();
 }
 
-void ABullet::NullCheck() {
+void ABullet::NullChecks() {
 	//if (!this->impactParticles) GEngine->AddOnScreenDebugMessage(-1, 20.0f, FColor::Red, FString::Printf(TEXT("[ABULLET]: impactParticles* is NULL")), false);
 }
 

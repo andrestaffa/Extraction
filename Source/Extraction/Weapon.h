@@ -26,9 +26,13 @@ struct FWeaponStats
 	float minBulletSpread = -0.1f;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float maxBulletSpread = 0.1f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float adsSpeed = 7.0f;
 
-	UPROPERTY(VisibleAnywhere)
-	bool bCanShoot_readOnly = false;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	bool bCanShoot = false;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	float adsValue = 0.0f;
 };
 
 UCLASS()
@@ -61,10 +65,6 @@ private:
 	class APlayerController* playerController;
 	const class USkeletalMeshSocket* barrelSocket;
 
-	// SET IN CHARACTER BLUEPRINT
-	UPROPERTY(BlueprintReadWrite, Category = "Stats", meta = (AllowPrivateAccess = "true"))
-	float adsValue;
-
 public:
 	void Shoot();
 	void StopShooting();
@@ -78,5 +78,6 @@ private:
 // MARK: - Getters and Setters
 public:
 	FORCEINLINE FWeaponStats GetWeaponStats() const { return this->weaponStats; }
+	FORCEINLINE void SetADSValue(float value) { this->weaponStats.adsValue = value; }
 
 };

@@ -40,7 +40,7 @@ void AWeapon::NullChecks() {
 }
 
 void AWeapon::RecoilUpdate() {
-	if (!this->weaponStats.bCanShoot_readOnly || !this->playerController) return;
+	if (!this->weaponStats.bCanShoot || !this->playerController) return;
 	this->playerController->AddPitchInput(-this->weaponStats.verticalRecoil * GetWorld()->GetDeltaSeconds());
 	int rand = FMath::RandRange(0, 1);
 	float yaw = (rand == 1) ? FMath::RandRange(this->weaponStats.minHorizontalRecoil, this->weaponStats.maxHorizontalRecoil) : FMath::RandRange(-this->weaponStats.maxHorizontalRecoil, -this->weaponStats.minHorizontalRecoil);
@@ -57,20 +57,20 @@ void AWeapon::Shoot() {
 	params.Owner = this;
 	GetWorld()->SpawnActor<ABullet>((this->bulletClass) ? this->bulletClass : ABullet::StaticClass(), socketTransform.GetLocation(), this->GetActorForwardVector().Rotation(), params);
 	if (this->recoilCameraShakeClass) GetWorld()->GetFirstPlayerController()->ClientStartCameraShake(this->recoilCameraShakeClass);
-	this->weaponStats.bCanShoot_readOnly = true;
+	this->weaponStats.bCanShoot = true;
 	FTimerHandle autoFireTimerHandle;
 	GetWorldTimerManager().SetTimer(autoFireTimerHandle, [&](){
-		if (this->weaponStats.bCanShoot_readOnly) this->Shoot();
+		if (this->weaponStats.bCanShoot) this->Shoot();
 	}, this->weaponStats.fireRate, false);
 }
 
 void AWeapon::StopShooting() {
-	this->weaponStats.bCanShoot_readOnly = false;
+	this->weaponStats.bCanShoot = false;
 }
 
 const FVector AWeapon::BulletDirection() {
 	FVector forwardVector = this->GetActorForwardVector() * -1;
-	float multiplier = FMath::GetMappedRangeValueClamped(FVector2D(0.0f, 1.0f), FVector2D(1.0f, 0.0f), this->adsValue);
+	float multiplier = FMath::GetMappedRangeValueClamped(FVector2D(0.0f, 1.0f), FVector2D(1.0f, 0.0f), this->weaponStats.adsValue);
 	float minBulletSpread = this->weaponStats.minBulletSpread * multiplier;
 	float maxBulletSpread = this->weaponStats.maxBulletSpread * multiplier;
 	float x = forwardVector.X + FMath::RandRange(minBulletSpread, maxBulletSpread);

@@ -173,10 +173,10 @@ private:
 	UPROPERTY(BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
 	float leanValue;
 
-	// (Aiming) SET IN BLUEPRINTS
-	UPROPERTY(BlueprintReadWrite, Category = "Movement", meta = (AllowPrivateAccess = "true"))
+	// ADS
+	UPROPERTY(BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
 	bool ADSEnabled;
-	UPROPERTY(BlueprintReadWrite, Category = "Movement", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
 	float ADSValue;
 
 protected:
@@ -184,6 +184,8 @@ protected:
 	// Movement Update Functions
 	void MovementUpdate();
 	void CancelReloadUpdate();
+	void SlideUpdate();
+	void ADSUpdate();
 
 	// Camera Shake
 	void HandleCameraShake();
@@ -208,7 +210,6 @@ protected:
 	void Climb();
 	void Slide();
 	bool SlideCancel();
-	void SlideUpdate();
 	void PlayMantleAnimation(class UAnimMontage* montageAnim, float animTime, bool& inAnimBool);
 
 	// Sprinting
@@ -221,6 +222,10 @@ protected:
 
 	// Leaning
 	void Lean(float axisValue);
+
+	// ADS
+	void ADSButtonPressed();
+	void ADSButtonReleased();
 
 // MARK: - [END] Movement Variables/Functions
 

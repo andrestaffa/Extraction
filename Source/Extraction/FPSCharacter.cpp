@@ -51,9 +51,10 @@ void AFPSCharacter::BeginPlay() {
 void AFPSCharacter::Tick(float DeltaTime) {
 	Super::Tick(DeltaTime);
 
-	this->SlideUpdate();
-	this->CancelReloadUpdate();
 	this->MovementUpdate();
+	this->CancelReloadUpdate();
+	this->SlideUpdate();
+	this->ADSUpdate();
 }
 
 // Called to bind functionality to input
@@ -77,6 +78,9 @@ void AFPSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 	PlayerInputComponent->BindAction(TEXT("Reload"), EInputEvent::IE_Pressed, this, &AFPSCharacter::ReloadButtonPressed);
 	PlayerInputComponent->BindAction(TEXT("Fire"), EInputEvent::IE_Pressed, this, &AFPSCharacter::FireButtonPressed);
 	PlayerInputComponent->BindAction(TEXT("Fire"), EInputEvent::IE_Released, this, &AFPSCharacter::FireButtonReleased);
+
+	PlayerInputComponent->BindAction(TEXT("ADS"), EInputEvent::IE_Pressed, this, &AFPSCharacter::ADSButtonPressed);
+	PlayerInputComponent->BindAction(TEXT("ADS"), EInputEvent::IE_Released, this, &AFPSCharacter::ADSButtonReleased);
 }
 
 void AFPSCharacter::NullChecks() {
@@ -121,7 +125,7 @@ void AFPSCharacter::FireButtonReleased() {
 
 void AFPSCharacter::MovementUpdate() {
 	if (this->ADSEnabled || this->moveForwardValue <= -1.0f || (this->moveRightValue != 0.0f && this->moveForwardValue == 0.0f) || this->isVaulting || this->isClimbing 
-		|| this->equippedWeapon->GetWeaponStats().bCanShoot_readOnly) {
+		|| this->equippedWeapon->GetWeaponStats().bCanShoot) {
 		this->ToggleSprint(false);
 		return;
 	}
@@ -144,6 +148,21 @@ void AFPSCharacter::CancelReloadUpdate() {
 		this->isReloading = false;
 		this->CancelTimer(this->reloadTimerHandle);
 	}
+}
+
+void AFPSCharacter::SlideUpdate() {
+	if (this->isSliding && this->GetVelocity().Size() < this->movementSettings.startSlideCancelSpeed) {
+		this->SlideCancel();
+		return;
+	}
+	if (this->isSliding) this->GetCharacterMovement()->MaxWalkSpeed = this->movementSettings.slideSpeed;
+}
+
+void AFPSCharacter::ADSUpdate() {
+	if (!this->equippedWeapon) return;
+	float adsSpeed = this->equippedWeapon->GetWeaponStats().adsSpeed;
+	this->ADSValue = (this->ADSEnabled) ? FMath::FInterpTo(this->ADSValue, 1.0f, GetWorld()->GetDeltaSeconds(), adsSpeed) : FMath::FInterpTo(this->ADSValue, 0.0f, GetWorld()->GetDeltaSeconds(), adsSpeed);
+	this->equippedWeapon->SetADSValue(this->ADSValue);
 }
 
 void AFPSCharacter::MoveForward(float axisValue) {
@@ -274,6 +293,14 @@ void AFPSCharacter::Lean(float axisValue) {
 	}
 }
 
+void AFPSCharacter::ADSButtonPressed() {
+	this->ADSEnabled = true;
+}
+
+void AFPSCharacter::ADSButtonReleased() {
+	this->ADSEnabled = false;
+}
+
 void AFPSCharacter::SetupParkour() {
 	FHitResult hitResult;
 	FVector start = this->GetActorLocation() + FVector(0.0f, 0.0f, this->movementSettings.legPosOffset);
@@ -362,14 +389,6 @@ bool AFPSCharacter::SlideCancel() {
 		return true;
 	}
 	return false;
-}
-
-void AFPSCharacter::SlideUpdate() {
-	if (this->isSliding && this->GetVelocity().Size() < this->movementSettings.startSlideCancelSpeed) {
-		this->SlideCancel();
-		return;
-	}
-	if (this->isSliding) this->GetCharacterMovement()->MaxWalkSpeed = this->movementSettings.slideSpeed;
 }
 
 void AFPSCharacter::PlayMantleAnimation(UAnimMontage* montageAnim, float animTime, bool& inAnimBool) {
