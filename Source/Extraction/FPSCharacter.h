@@ -116,8 +116,11 @@ private:
 	void NullChecks();
 
 	void SpawnDefaultWeapon();
+
 	void FireButtonPressed();
 	void FireButtonReleased();
+
+	void FireModeButtonPressed();
 
 
 

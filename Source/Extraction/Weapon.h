@@ -6,6 +6,14 @@
 #include "Item.h"
 #include "Weapon.generated.h"
 
+UENUM(BlueprintType)
+enum class EFireMode : uint8 {
+	EFM_FullAuto UMETA(DisplayName = "Full Auto"),
+	EFM_Single UMETA(DisplayName = "Single"),
+	EFM_Burst UMETA(DisplayName = "Burst"),
+	EFM_MAX UMETA(DisplayName = "DefaultMAX")
+};
+
 
 USTRUCT(BlueprintType)
 struct FWeaponStats 
@@ -28,9 +36,19 @@ struct FWeaponStats
 	float maxBulletSpread = 0.1f;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float adsSpeed = 7.0f;
+	UPROPERTY(EditAnywhere)
+	EFireMode availableFiringModes[2] = { EFireMode::EFM_FullAuto, EFireMode::EFM_Single };
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	bool bCanShoot = false;
+	EFireMode currentFiringMode;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	bool isShootingFullAuto = false;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	bool isShootingBurst = false;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	bool bCanShootSingle = true;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	int bursts = 0;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	float adsValue = 0.0f;
 };
@@ -74,10 +92,15 @@ private:
 	void NullChecks();
 
 	void RecoilUpdate();
+	void AddRecoil();
+	void FireSingle(FTransform& socketTransform, FActorSpawnParameters& params);
 
 // MARK: - Getters and Setters
 public:
 	FORCEINLINE FWeaponStats GetWeaponStats() const { return this->weaponStats; }
+	FORCEINLINE bool isShooting() const { return this->weaponStats.isShootingFullAuto || !this->weaponStats.bCanShootSingle || this->weaponStats.isShootingBurst; }
+
 	FORCEINLINE void SetADSValue(float value) { this->weaponStats.adsValue = value; }
+	void ChangeFiringMode();
 
 };

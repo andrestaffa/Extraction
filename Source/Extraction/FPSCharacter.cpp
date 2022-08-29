@@ -78,6 +78,7 @@ void AFPSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 	PlayerInputComponent->BindAction(TEXT("Reload"), EInputEvent::IE_Pressed, this, &AFPSCharacter::ReloadButtonPressed);
 	PlayerInputComponent->BindAction(TEXT("Fire"), EInputEvent::IE_Pressed, this, &AFPSCharacter::FireButtonPressed);
 	PlayerInputComponent->BindAction(TEXT("Fire"), EInputEvent::IE_Released, this, &AFPSCharacter::FireButtonReleased);
+	PlayerInputComponent->BindAction(TEXT("FireMode"), EInputEvent::IE_Pressed, this, &AFPSCharacter::FireModeButtonPressed);
 
 	PlayerInputComponent->BindAction(TEXT("ADS"), EInputEvent::IE_Pressed, this, &AFPSCharacter::ADSButtonPressed);
 	PlayerInputComponent->BindAction(TEXT("ADS"), EInputEvent::IE_Released, this, &AFPSCharacter::ADSButtonReleased);
@@ -115,17 +116,24 @@ void AFPSCharacter::SpawnDefaultWeapon() {
 }
 
 void AFPSCharacter::FireButtonPressed() {
-	if (this->isReloading) return;
+	if (!this->equippedWeapon || this->isReloading) return;
 	this->equippedWeapon->Shoot();
 }
 
 void AFPSCharacter::FireButtonReleased() {
+	if (!this->equippedWeapon) return;
 	this->equippedWeapon->StopShooting();
+}
+
+void AFPSCharacter::FireModeButtonPressed() {
+	if (!this->equippedWeapon || this->isReloading) return;
+	if (this->equippedWeapon->isShooting()) return;
+	this->equippedWeapon->ChangeFiringMode();
 }
 
 void AFPSCharacter::MovementUpdate() {
 	if (this->ADSEnabled || this->moveForwardValue <= -1.0f || (this->moveRightValue != 0.0f && this->moveForwardValue == 0.0f) || this->isVaulting || this->isClimbing 
-		|| this->equippedWeapon->GetWeaponStats().bCanShoot) {
+		|| this->equippedWeapon->isShooting()) {
 		this->ToggleSprint(false);
 		return;
 	}
