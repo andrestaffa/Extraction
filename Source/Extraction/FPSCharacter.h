@@ -11,6 +11,12 @@ struct FSensitivitySettings
 {
 	GENERATED_BODY()
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(UIMin = "90.0", UIMax = "110.0"))
+	int FOV = 90;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(UIMin = "90.0", UIMax = "110.0"))
+	int affectedFOV = 80;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	bool bAffectedFOV = false;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(UIMin = "1.0", UIMax = "100.0"))
 	float mouseSensitivity = 35.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(UIMin = "0.1", UIMax = "1.0"))
@@ -177,9 +183,9 @@ private:
 	float leanValue;
 
 	// ADS
-	UPROPERTY(BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(BlueprintReadWrite, Category = "Movement", meta = (AllowPrivateAccess = "true"))
 	bool ADSEnabled;
-	UPROPERTY(BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(BlueprintReadWrite, Category = "Movement", meta = (AllowPrivateAccess = "true"))
 	float ADSValue;
 
 protected:
@@ -192,6 +198,7 @@ protected:
 
 	// Camera Shake
 	void HandleCameraShake();
+	void AdjustCamera();
 
 	// Mouse Inputs
 	void MoveForward(float axisValue);

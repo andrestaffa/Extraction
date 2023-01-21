@@ -7,8 +7,10 @@
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Camera/CameraShakeBase.h"
+#include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Engine/SkeletalMeshSocket.h"
 
 // Sets default values
 AFPSCharacter::AFPSCharacter() :
@@ -43,6 +45,7 @@ AFPSCharacter::AFPSCharacter() :
 void AFPSCharacter::BeginPlay() {
 	Super::BeginPlay();
 
+	this->AdjustCamera();
 	this->SpawnDefaultWeapon();
 	this->NullChecks();
 }
@@ -99,6 +102,18 @@ void AFPSCharacter::HandleCameraShake() {
 	} else {
 		if (this->headBobWalkCameraShake)
 			GetWorld()->GetFirstPlayerController()->ClientStartCameraShake(this->headBobWalkCameraShake, 1.5f);
+	}
+}
+
+void AFPSCharacter::AdjustCamera() {
+	TArray<UCameraComponent*> components;
+	this->GetComponents(components, false);
+	if (components.IsEmpty()) { return; }
+	if (UCameraComponent* camera = components[0]) {
+		this->sensitivitySettings.affectedFOV = (this->sensitivitySettings.bAffectedFOV) ? this->sensitivitySettings.FOV - 10 : 80;
+		float scalar = (float(this->sensitivitySettings.FOV) / 90.0f) * 1.35f;
+		FVector result = FVector(camera->GetRelativeLocation().X, camera->GetRelativeLocation().Y, camera->GetRelativeLocation().Z) * scalar;
+		camera->SetRelativeLocation(result);
 	}
 }
 
@@ -167,10 +182,10 @@ void AFPSCharacter::SlideUpdate() {
 }
 
 void AFPSCharacter::ADSUpdate() {
-	if (!this->equippedWeapon) return;
-	float adsSpeed = this->equippedWeapon->GetWeaponStats().adsSpeed;
-	this->ADSValue = (this->ADSEnabled) ? FMath::FInterpTo(this->ADSValue, 1.0f, GetWorld()->GetDeltaSeconds(), adsSpeed) : FMath::FInterpTo(this->ADSValue, 0.0f, GetWorld()->GetDeltaSeconds(), adsSpeed);
-	this->equippedWeapon->SetADSValue(this->ADSValue);
+	// if (!this->equippedWeapon) return;
+	// float adsSpeed = this->equippedWeapon->GetWeaponStats().adsSpeed;
+	// this->ADSValue = (this->ADSEnabled) ? FMath::FInterpTo(this->ADSValue, 1.0f, GetWorld()->GetDeltaSeconds(), adsSpeed) : FMath::FInterpTo(this->ADSValue, 0.0f, GetWorld()->GetDeltaSeconds(), adsSpeed);
+	// this->equippedWeapon->SetADSValue(this->ADSValue);
 }
 
 void AFPSCharacter::MoveForward(float axisValue) {

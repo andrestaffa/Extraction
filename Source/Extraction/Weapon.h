@@ -43,6 +43,8 @@ struct FWeaponStats
 	float maxBulletSpread = 0.1f;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float adsSpeed = 7.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float blueprint_ADS_Speed = 0.3f;
 	UPROPERTY(EditAnywhere)
 	EFireMode availableFiringModes[2] = { EFireMode::EFM_FullAuto, EFireMode::EFM_Single };
 
@@ -158,9 +160,11 @@ private:
 
 // MARK: - Getters and Setters
 public:
+	UFUNCTION(BlueprintCallable)
 	FORCEINLINE FWeaponStats GetWeaponStats() const { return this->weaponStats; }
 	FORCEINLINE bool isShooting() const { return this->weaponStats.isShootingFullAuto || !this->weaponStats.bCanShootSingle || this->weaponStats.isShootingBurst; }
 
+	UFUNCTION(BlueprintCallable)
 	FORCEINLINE void SetADSValue(float value) { this->weaponStats.adsValue = value; }
 	void ChangeFiringMode();
 
