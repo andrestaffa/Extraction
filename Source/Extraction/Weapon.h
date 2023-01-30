@@ -14,13 +14,6 @@ enum class EFireMode : uint8 {
 	EFM_MAX UMETA(DisplayName = "DefaultMAX")
 };
 
-UENUM(BlueprintType)
-enum class EWeaponAttachment : uint8 {
-	EWA_Scope UMETA(DisplayName = "Scope"),
-	EWA_Barrel UMETA(DisplayName = "Barrel"),
-	EWA_Grip UMETA(DisplayName = "Grip"),
-};
-
 
 USTRUCT(BlueprintType)
 struct FWeaponStats 
@@ -68,14 +61,14 @@ struct FWeaponScope
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	TSubclassOf<AActor> scopeClass;
-	AActor* currentEquippedScope;
+	TSubclassOf<class AWeaponAttachment> attachmentClass;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	FVector scopePosition = FVector(0.0f, 0.0f, 0.0f);
+	FVector scopePosition = FVector(0.0f, -17.2f, 0.0f);
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	FVector ironSightPosition = FVector(0.0f, 0.0f, 0.0f);
+	FVector rangeScopePosition = FVector(0.0f, -16.2f, -1.0f);
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FVector defaultScopePosition = FVector(0.0f, -14.2f, 0.0f);
 };
-
 
 USTRUCT(BlueprintType)
 struct FWeaponBarrel 
@@ -83,10 +76,11 @@ struct FWeaponBarrel
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	TSubclassOf<AActor> barrelClass;
-	AActor* currentEquippedBarrel;
+	TSubclassOf<class AWeaponAttachment> attachmentClass;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FVector barrelPosition = FVector(0.0f, 0.0f, 0.0f);
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FVector defaultbarrelPosition = FVector(0.0f, 0.0f, 0.0f);
 };
 
 USTRUCT(BlueprintType)
@@ -95,10 +89,11 @@ struct FWeaponGrip
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	TSubclassOf<AActor> gripClass;
-	AActor* currentEquippedGrip;
+	TSubclassOf<class AWeaponAttachment> attachmentClass;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	FVector gripPosition = FVector(0.0f, 0.0f, 0.0f);
+	FVector gripPosition = FVector(9.0f, 0.0f, 28.0f);
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FVector defaultGripPosition = FVector(6.860041f, -5.002760f, 21.294327f);
 };
 
 
@@ -126,28 +121,30 @@ private:
 	const class USkeletalMeshSocket* barrelSocket;
 
 	// Stats
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Stats", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Statistics", meta = (AllowPrivateAccess = "true"))
 	TSubclassOf<class ABullet> bulletClass;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Stats", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Statistics", meta = (AllowPrivateAccess = "true"))
 	TSubclassOf<class UCameraShakeBase> recoilCameraShakeClass;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Stats", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Statistics", meta = (AllowPrivateAccess = "true"))
 	FWeaponStats weaponStats;
 
 	// Attachments
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Attachments", meta = (AllowPrivateAccess = "true"))
-	FWeaponScope weaponScope;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Attachments", meta = (AllowPrivateAccess = "true"))
-	FWeaponBarrel weaponBarrel;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Attachments", meta = (AllowPrivateAccess = "true"))
-	FWeaponGrip weaponGrip;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon Attachments", meta = (AllowPrivateAccess = "true"))
+	FWeaponScope scope;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon Attachments", meta = (AllowPrivateAccess = "true"))
+	FWeaponBarrel barrel;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon Attachments", meta = (AllowPrivateAccess = "true"))
+	FWeaponGrip grip;
 
+	UPROPERTY()
+	TSet<class AWeaponAttachment*> attachments;
+	
 public:
 	void Shoot();
 	void StopShooting();
 	const FVector BulletDirection();
 
-	// Attachments
-	void SetAttachment(EWeaponAttachment attachment, TSubclassOf<AActor> scopeClass);
+	void SetAttachment(AWeaponAttachment* attachment);
 
 private:
 	void NullChecks();
@@ -156,7 +153,10 @@ private:
 	void AddRecoil();
 	void FireSingle(FTransform& socketTransform, FActorSpawnParameters& params);
 
-	void DefaultSocketLocations();
+	void SetDefaultSocketLocations();
+	void SetAttachment(TSubclassOf<class AWeaponAttachment> attachmentClass);
+	void SetDefaultAttachments();
+	class AWeaponAttachment* HasAttachment(class AWeaponAttachment* other);
 
 // MARK: - Getters and Setters
 public:
@@ -169,6 +169,6 @@ public:
 	void ChangeFiringMode();
 
 	UFUNCTION(BlueprintCallable)
-	FORCEINLINE bool hasGripAttachment() const { if (this->weaponGrip.currentEquippedGrip) { return true; } else { return false; } }
+	bool hasGripAttachment() const;
 
 };

@@ -3,6 +3,7 @@
 
 #include "Weapon.h"
 #include "Bullet.h"
+#include "WeaponAttachment.h"
 
 #include "Kismet/GameplayStatics.h"
 #include "Engine/SkeletalMeshSocket.h"
@@ -14,10 +15,6 @@ AWeapon::AWeapon()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	this->weaponScope.ironSightPosition = FVector(0.0f, -14.2f, 0.0f);
-	this->weaponBarrel.barrelPosition = FVector::ZeroVector;
-	this->weaponGrip.gripPosition = FVector(10.0f, 0.0f, 25.702934f);
-
 }
 
 // Called when the game starts or when spawned
@@ -28,12 +25,8 @@ void AWeapon::BeginPlay() {
 	this->barrelSocket = this->GetItemSkeletalMesh()->GetSocketByName("Muzzle");
 	this->weaponStats.currentFiringMode = this->GetWeaponStats().availableFiringModes[0];
 
-	this->DefaultSocketLocations();
-
-	this->SetAttachment(EWeaponAttachment::EWA_Scope, this->weaponScope.scopeClass);
-	this->SetAttachment(EWeaponAttachment::EWA_Barrel, this->weaponBarrel.barrelClass);
-	this->SetAttachment(EWeaponAttachment::EWA_Grip, this->weaponGrip.gripClass);
-
+	this->SetDefaultSocketLocations();
+	this->SetDefaultAttachments();
 	this->NullChecks();
 }
 
@@ -51,11 +44,17 @@ void AWeapon::NullChecks() {
 	if (!this->recoilCameraShakeClass) GEngine->AddOnScreenDebugMessage(-1, 20.0f, FColor::Red, FString::Printf(TEXT("[AWeapon]: recoilCameraShakeClass* is NULL")), false);
 }
 
-void AWeapon::DefaultSocketLocations() {
+void AWeapon::SetDefaultSocketLocations() {
 	if (USkeletalMeshSocket* ironSightSocket = const_cast<USkeletalMeshSocket*>(this->GetItemSkeletalMesh()->GetSocketByName("IronSight")))
-		ironSightSocket->RelativeLocation = this->weaponScope.ironSightPosition;
+		ironSightSocket->RelativeLocation = this->scope.defaultScopePosition;
 	if (USkeletalMeshSocket* leftHandPlacementSocket = const_cast<USkeletalMeshSocket*>(this->GetItemSkeletalMesh()->GetSocketByName("LeftHandPlacement")))
-		leftHandPlacementSocket->RelativeLocation = FVector(6.860041f, -5.002760f, 21.294327f);
+		leftHandPlacementSocket->RelativeLocation = this->grip.defaultGripPosition;
+}
+
+void AWeapon::SetDefaultAttachments() {
+	if (this->scope.attachmentClass) this->SetAttachment(this->scope.attachmentClass);
+	if (this->barrel.attachmentClass) this->SetAttachment(this->barrel.attachmentClass);
+	if (this->grip.attachmentClass) this->SetAttachment(this->grip.attachmentClass);
 }
 
 void AWeapon::RecoilUpdate() {
@@ -132,55 +131,51 @@ void AWeapon::ChangeFiringMode() {
 	this->weaponStats.currentFiringMode = (cond) ? this->GetWeaponStats().availableFiringModes[1] : this->GetWeaponStats().availableFiringModes[0];
 }
 
-void AWeapon::SetAttachment(EWeaponAttachment attachment, TSubclassOf<AActor> attachmentClass) {
-	if (attachment == EWeaponAttachment::EWA_Scope) {
-		if (!attachmentClass) { 
-			if (this->weaponScope.currentEquippedScope) 
-				this->weaponScope.currentEquippedScope->Destroy();
-			if (USkeletalMeshSocket* ironSightSocket = const_cast<USkeletalMeshSocket*>(this->GetItemSkeletalMesh()->GetSocketByName("IronSight")))
-				ironSightSocket->RelativeLocation = this->weaponScope.ironSightPosition;
-			this->weaponScope.scopeClass = nullptr;  
-			return;
+void AWeapon::SetAttachment(TSubclassOf<class AWeaponAttachment> attachmentClass) {
+	if (AWeaponAttachment* spawnedAttachment = GetWorld()->SpawnActor<AWeaponAttachment>(attachmentClass, FVector::ZeroVector, FRotator::ZeroRotator)) {
+		spawnedAttachment->SetActorEnableCollision(false);
+		if (spawnedAttachment->GetAttachmentType() == EWeaponAttachment::EWA_Scope) {
+			spawnedAttachment->AttachToComponent(this->GetItemSkeletalMesh(), FAttachmentTransformRules::KeepRelativeTransform, TEXT("Scope"));
+			if (USkeletalMeshSocket* ironSightSocket = const_cast<USkeletalMeshSocket*>(this->GetItemSkeletalMesh()->GetSocketByName("IronSight"))) {
+				ironSightSocket->RelativeLocation = (spawnedAttachment->GetIsRangedScope()) ? this->scope.rangeScopePosition : this->scope.scopePosition;
+			}
+		} else if (spawnedAttachment->GetAttachmentType() == EWeaponAttachment::EWA_Barrel) {
+			spawnedAttachment->AttachToComponent(this->GetItemSkeletalMesh(), FAttachmentTransformRules::KeepRelativeTransform, TEXT("Muzzle"));
+		} else if (spawnedAttachment->GetAttachmentType() == EWeaponAttachment::EWA_Grip) {
+			spawnedAttachment->AttachToComponent(this->GetItemSkeletalMesh(), FAttachmentTransformRules::KeepRelativeTransform, TEXT("Grip"));
+			if (USkeletalMeshSocket* leftHandPlacementSocket = const_cast<USkeletalMeshSocket*>(this->GetItemSkeletalMesh()->GetSocketByName("LeftHandPlacement"))) {
+				leftHandPlacementSocket->RelativeLocation = this->grip.gripPosition;
+			}
 		}
-		if (this->weaponScope.currentEquippedScope) this->weaponScope.currentEquippedScope->Destroy();
-		if (AActor* scope = GetWorld()->SpawnActor<AActor>(attachmentClass, FVector::ZeroVector, FRotator::ZeroRotator)) {
-			this->weaponScope.currentEquippedScope = scope;
-			this->weaponScope.scopeClass = attachmentClass;
-			this->weaponScope.currentEquippedScope->SetActorEnableCollision(false);
-			this->weaponScope.currentEquippedScope->AttachToComponent(this->GetItemSkeletalMesh(), FAttachmentTransformRules::KeepRelativeTransform, TEXT("Scope"));
-			if (USkeletalMeshSocket* ironSightSocket = const_cast<USkeletalMeshSocket*>(this->GetItemSkeletalMesh()->GetSocketByName("IronSight")))
-				ironSightSocket->RelativeLocation = this->weaponScope.scopePosition;
-		}
-	} else if (attachment == EWeaponAttachment::EWA_Barrel) {
-		if (!attachmentClass) {
-			if (this->weaponBarrel.currentEquippedBarrel) this->weaponBarrel.currentEquippedBarrel->Destroy();
-			this->weaponBarrel.barrelClass = nullptr;
-			return;
-		}
-		if (this->weaponBarrel.currentEquippedBarrel) this->weaponBarrel.currentEquippedBarrel->Destroy();
-		if (AActor* barrel = GetWorld()->SpawnActor<AActor>(attachmentClass, FVector::ZeroVector, FRotator::ZeroRotator)) {
-			this->weaponBarrel.currentEquippedBarrel = barrel;
-			this->weaponBarrel.barrelClass = attachmentClass;
-			this->weaponBarrel.currentEquippedBarrel->SetActorEnableCollision(false);
-			this->weaponBarrel.currentEquippedBarrel->AttachToComponent(this->GetItemSkeletalMesh(), FAttachmentTransformRules::KeepRelativeTransform, TEXT("Muzzle"));
-		}
-	} else if (attachment == EWeaponAttachment::EWA_Grip) {
-		if (!attachmentClass) {
-			if (this->weaponGrip.currentEquippedGrip) this->weaponGrip.currentEquippedGrip->Destroy();
-			if (USkeletalMeshSocket* leftHandPlacementSocket = const_cast<USkeletalMeshSocket*>(this->GetItemSkeletalMesh()->GetSocketByName("LeftHandPlacement")))
-				leftHandPlacementSocket->RelativeLocation = FVector(6.860041f, -5.002760f, 21.294327f);
-			this->weaponGrip.gripClass = nullptr;
-			return;
-		}
-		if (this->weaponGrip.currentEquippedGrip) this->weaponGrip.currentEquippedGrip->Destroy();
-		if (AActor* grip = GetWorld()->SpawnActor<AActor>(attachmentClass, FVector::ZeroVector, FRotator::ZeroRotator)) {
-			this->weaponGrip.currentEquippedGrip = grip;
-			this->weaponGrip.gripClass = attachmentClass;
-			this->weaponGrip.currentEquippedGrip->SetActorEnableCollision(false);
-			this->weaponGrip.currentEquippedGrip->AttachToComponent(this->GetItemSkeletalMesh(), FAttachmentTransformRules::KeepRelativeTransform, TEXT("Grip"));
-			if (USkeletalMeshSocket* leftHandPlacementSocket = const_cast<USkeletalMeshSocket*>(this->GetItemSkeletalMesh()->GetSocketByName("LeftHandPlacement")))
-				leftHandPlacementSocket->RelativeLocation = this->weaponGrip.gripPosition;
-		}
+		this->attachments.Add(spawnedAttachment);
 	}
+}
+
+void AWeapon::SetAttachment(AWeaponAttachment* attachment) {
+	UClass* attachmentClass = attachment->GetClass();
+	TSubclassOf<AWeaponAttachment> attachmentSubClass = TSoftClassPtr<AWeaponAttachment>(attachmentClass).Get();
+	if (AWeaponAttachment* a = this->HasAttachment(attachment)) {
+		this->attachments.Remove(a);
+		if (a->GetAttachmentType() == EWeaponAttachment::EWA_Scope) {
+			if (USkeletalMeshSocket* ironSightSocket = const_cast<USkeletalMeshSocket*>(this->GetItemSkeletalMesh()->GetSocketByName("IronSight"))) ironSightSocket->RelativeLocation = this->scope.defaultScopePosition;
+		} else if (a->GetAttachmentType() == EWeaponAttachment::EWA_Grip) {
+			if (USkeletalMeshSocket* leftHandPlacementSocket = const_cast<USkeletalMeshSocket*>(this->GetItemSkeletalMesh()->GetSocketByName("LeftHandPlacement"))) leftHandPlacementSocket->RelativeLocation = this->grip.defaultGripPosition;
+		}
+		a->Destroy();
+	}
+	this->SetAttachment(attachmentSubClass);
+}
+
+AWeaponAttachment* AWeapon::HasAttachment(AWeaponAttachment* other) {
+	for (AWeaponAttachment* attachment : this->attachments)
+		if (attachment->GetAttachmentType() == other->GetAttachmentType()) return attachment;
+	return nullptr;
+}
+
+bool AWeapon::hasGripAttachment() const {
+	for (const AWeaponAttachment* attachment : this->attachments) {
+		if (attachment->GetAttachmentType() == EWeaponAttachment::EWA_Grip) return true;
+	}
+	return false;
 }
 

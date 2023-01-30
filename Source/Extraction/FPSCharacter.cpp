@@ -18,6 +18,8 @@ AFPSCharacter::AFPSCharacter() :
 	moveRightValue(0.0f),
 	turnValue(0.0f),
 	lookValue(0.0f),
+	turnValueController(0.0f),
+	lookValueController(0.0f),
 	isCrouching(false),
 	isProning(false),
 	isVaulting(false),
@@ -111,7 +113,7 @@ void AFPSCharacter::AdjustCamera() {
 	if (components.IsEmpty()) { return; }
 	if (UCameraComponent* camera = components[0]) {
 		this->sensitivitySettings.affectedFOV = (this->sensitivitySettings.bAffectedFOV) ? this->sensitivitySettings.FOV - 10 : 80;
-		float scalar = (float(this->sensitivitySettings.FOV) / 90.0f) * 1.35f;
+		float scalar = (float(this->sensitivitySettings.FOV) / 90.0f) * 1.0f;
 		FVector result = FVector(camera->GetRelativeLocation().X, camera->GetRelativeLocation().Y, camera->GetRelativeLocation().Z) * scalar;
 		camera->SetRelativeLocation(result);
 	}
@@ -228,15 +230,15 @@ void AFPSCharacter::LookUp(float axisValue) {
 }
 
 void AFPSCharacter::TurnRate(float axisValue) {
-	this->turnValue = axisValue * (this->sensitivitySettings.controllerHorizontalSensitivity * 10.0f) * GetWorld()->GetDeltaSeconds();
-	if (this->ADSEnabled) this->turnValue *= this->sensitivitySettings.controllerADSSensitivityMultiplier;
-	this->AddControllerYawInput(this->turnValue);
+	this->turnValueController = axisValue * (this->sensitivitySettings.controllerHorizontalSensitivity * 10.0f) * GetWorld()->GetDeltaSeconds();
+	if (this->ADSEnabled) this->turnValueController *= this->sensitivitySettings.controllerADSSensitivityMultiplier;
+	this->AddControllerYawInput(this->turnValueController);
 }
 
 void AFPSCharacter::LookUpRate(float axisValue) {
-	this->lookValue = axisValue * (this->sensitivitySettings.controllerHorizontalSensitivity * 10.0f) * GetWorld()->GetDeltaSeconds();
-	if (this->ADSEnabled) this->lookValue *= this->sensitivitySettings.controllerADSSensitivityMultiplier;
-	this->AddControllerPitchInput(this->lookValue);
+	this->lookValueController = axisValue * (this->sensitivitySettings.controllerHorizontalSensitivity * 10.0f) * GetWorld()->GetDeltaSeconds();
+	if (this->ADSEnabled) this->lookValueController *= this->sensitivitySettings.controllerADSSensitivityMultiplier;
+	this->AddControllerPitchInput(this->lookValueController);
 }
 
 void AFPSCharacter::CrouchButtonPressed() {

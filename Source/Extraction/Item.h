@@ -28,11 +28,15 @@ private:
 	USceneComponent* root;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Item Properties", meta = (AllowPrivateAccess = "true"))
-	USkeletalMeshComponent* itemMesh;
+	USkeletalMeshComponent* itemSkeletalMesh;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Item Properties", meta = (AllowPrivateAccess = "true"))
+	UStaticMeshComponent* itemStaticMesh;
 
 
 // MARK: - Getters and Setters
 public:
-	FORCEINLINE USkeletalMeshComponent* GetItemSkeletalMesh() const { return this->itemMesh; }
+	FORCEINLINE USkeletalMeshComponent* GetItemSkeletalMesh() const { return this->itemSkeletalMesh; }
+	FORCEINLINE UStaticMeshComponent* GetItemStaticMesh() const { return this->itemStaticMesh; }
 
 };

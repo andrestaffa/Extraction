@@ -13,8 +13,11 @@ AItem::AItem() {
 	this->root = CreateDefaultSubobject<USceneComponent>(TEXT("Root Scene Component"));
 	this->RootComponent = this->root;
 
-	this->itemMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Weapon Mesh"));
-	this->itemMesh->SetupAttachment(this->root);
+	this->itemSkeletalMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Weapon Mesh"));
+	this->itemSkeletalMesh->SetupAttachment(this->root);
+
+	this->itemStaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Item Static Mesh"));
+	this->itemStaticMesh->SetupAttachment(this->root);
 }
 
 // Called when the game starts or when spawned
