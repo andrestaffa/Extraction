@@ -132,12 +132,15 @@ void AWeapon::ChangeFiringMode() {
 }
 
 void AWeapon::SetAttachment(TSubclassOf<class AWeaponAttachment> attachmentClass) {
-	if (AWeaponAttachment* spawnedAttachment = GetWorld()->SpawnActor<AWeaponAttachment>(attachmentClass, FVector::ZeroVector, FRotator::ZeroRotator)) {
+	if (!attachmentClass) return;
+	FActorSpawnParameters params;
+	params.Owner = this;
+	if (AWeaponAttachment* spawnedAttachment = GetWorld()->SpawnActor<AWeaponAttachment>(attachmentClass, FVector::ZeroVector, FRotator::ZeroRotator, params)) {
 		spawnedAttachment->SetActorEnableCollision(false);
 		if (spawnedAttachment->GetAttachmentType() == EWeaponAttachment::EWA_Scope) {
 			spawnedAttachment->AttachToComponent(this->GetItemSkeletalMesh(), FAttachmentTransformRules::KeepRelativeTransform, TEXT("Scope"));
 			if (USkeletalMeshSocket* ironSightSocket = const_cast<USkeletalMeshSocket*>(this->GetItemSkeletalMesh()->GetSocketByName("IronSight"))) {
-				ironSightSocket->RelativeLocation = (spawnedAttachment->GetIsRangedScope()) ? this->scope.rangeScopePosition : this->scope.scopePosition;
+				ironSightSocket->RelativeLocation = (spawnedAttachment->GetIsRangedScope()) ? this->scope.opticalScopePosition : this->scope.scopePosition;
 			}
 		} else if (spawnedAttachment->GetAttachmentType() == EWeaponAttachment::EWA_Barrel) {
 			spawnedAttachment->AttachToComponent(this->GetItemSkeletalMesh(), FAttachmentTransformRules::KeepRelativeTransform, TEXT("Muzzle"));
@@ -152,21 +155,27 @@ void AWeapon::SetAttachment(TSubclassOf<class AWeaponAttachment> attachmentClass
 }
 
 void AWeapon::SetAttachment(AWeaponAttachment* attachment) {
+	if (!attachment) return;
 	UClass* attachmentClass = attachment->GetClass();
 	TSubclassOf<AWeaponAttachment> attachmentSubClass = TSoftClassPtr<AWeaponAttachment>(attachmentClass).Get();
-	if (AWeaponAttachment* a = this->HasAttachment(attachment)) {
-		this->attachments.Remove(a);
-		if (a->GetAttachmentType() == EWeaponAttachment::EWA_Scope) {
-			if (USkeletalMeshSocket* ironSightSocket = const_cast<USkeletalMeshSocket*>(this->GetItemSkeletalMesh()->GetSocketByName("IronSight"))) ironSightSocket->RelativeLocation = this->scope.defaultScopePosition;
-		} else if (a->GetAttachmentType() == EWeaponAttachment::EWA_Grip) {
-			if (USkeletalMeshSocket* leftHandPlacementSocket = const_cast<USkeletalMeshSocket*>(this->GetItemSkeletalMesh()->GetSocketByName("LeftHandPlacement"))) leftHandPlacementSocket->RelativeLocation = this->grip.defaultGripPosition;
-		}
-		a->Destroy();
-	}
+	if (AWeaponAttachment* a = this->HasAttachment(attachment))
+		this->RemoveAttacment(a);
 	this->SetAttachment(attachmentSubClass);
 }
 
+void AWeapon::RemoveAttacment(AWeaponAttachment* attachment) {
+	if (!attachment || this->attachments.IsEmpty()) return;
+	this->attachments.Remove(attachment);
+	if (attachment->GetAttachmentType() == EWeaponAttachment::EWA_Scope) {
+		if (USkeletalMeshSocket *ironSightSocket = const_cast<USkeletalMeshSocket *>(this->GetItemSkeletalMesh()->GetSocketByName("IronSight"))) ironSightSocket->RelativeLocation = this->scope.defaultScopePosition;
+	} else if (attachment->GetAttachmentType() == EWeaponAttachment::EWA_Grip) {
+		if (USkeletalMeshSocket *leftHandPlacementSocket = const_cast<USkeletalMeshSocket *>(this->GetItemSkeletalMesh()->GetSocketByName("LeftHandPlacement"))) leftHandPlacementSocket->RelativeLocation = this->grip.defaultGripPosition;
+	}
+	attachment->Destroy();
+}
+
 AWeaponAttachment* AWeapon::HasAttachment(AWeaponAttachment* other) {
+	if (!other) return nullptr;
 	for (AWeaponAttachment* attachment : this->attachments)
 		if (attachment->GetAttachmentType() == other->GetAttachmentType()) return attachment;
 	return nullptr;

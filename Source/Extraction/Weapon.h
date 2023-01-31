@@ -65,7 +65,7 @@ struct FWeaponScope
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FVector scopePosition = FVector(0.0f, -17.2f, 0.0f);
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	FVector rangeScopePosition = FVector(0.0f, -16.2f, -1.0f);
+	FVector opticalScopePosition = FVector(0.0f, -16.2f, -1.0f);
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FVector defaultScopePosition = FVector(0.0f, -14.2f, 0.0f);
 };
@@ -135,8 +135,7 @@ private:
 	FWeaponBarrel barrel;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon Attachments", meta = (AllowPrivateAccess = "true"))
 	FWeaponGrip grip;
-
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon Attachments", meta = (AllowPrivateAccess = "true"))
 	TSet<class AWeaponAttachment*> attachments;
 	
 public:
@@ -144,7 +143,8 @@ public:
 	void StopShooting();
 	const FVector BulletDirection();
 
-	void SetAttachment(AWeaponAttachment* attachment);
+	void SetAttachment(class AWeaponAttachment* attachment);
+	void RemoveAttacment(class AWeaponAttachment* attachment);
 
 private:
 	void NullChecks();
@@ -162,6 +162,10 @@ private:
 public:
 	UFUNCTION(BlueprintCallable)
 	FORCEINLINE FWeaponStats GetWeaponStats() const { return this->weaponStats; }
+	FORCEINLINE void SetWeaponStats(FWeaponStats stats) { this->weaponStats = stats; }
+
+	FORCEINLINE TSet<class AWeaponAttachment*> GetWeaponAttachments() const { return this->attachments; }
+
 	FORCEINLINE bool isShooting() const { return this->weaponStats.isShootingFullAuto || !this->weaponStats.bCanShootSingle || this->weaponStats.isShootingBurst; }
 
 	UFUNCTION(BlueprintCallable)
