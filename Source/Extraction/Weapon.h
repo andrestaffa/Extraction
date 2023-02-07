@@ -40,7 +40,6 @@ struct FWeaponStats
 	float blueprint_ADS_Speed = 0.3f;
 	UPROPERTY(EditAnywhere)
 	EFireMode availableFiringModes[2] = { EFireMode::EFM_FullAuto, EFireMode::EFM_Single };
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	EFireMode currentFiringMode;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
@@ -53,6 +52,23 @@ struct FWeaponStats
 	int bursts = 0;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	float adsValue = 0.0f;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	bool bIsClipping = false;
+};
+
+USTRUCT(BlueprintType)
+struct FClippingSettings 
+{
+	GENERATED_BODY()
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	FVector intialClipPostion = FVector(0.0f, 0.0f, 0.0f);
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	FVector targetGunClipPostion = FVector(0.0f, 0.0f, 0.0f);
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	float normalizedDistanceRange = 0.0f;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	float clippingLerpValue = 0.0f;
 };
 
 USTRUCT(BlueprintType)
@@ -65,7 +81,7 @@ struct FWeaponScope
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FVector scopePosition = FVector(0.0f, -17.2f, 0.0f);
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	FVector opticalScopePosition = FVector(0.0f, -16.2f, -1.0f);
+	FVector opticalScopePosition = FVector(0.0f, -16.2f, 0.0f);
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FVector defaultScopePosition = FVector(0.0f, -14.2f, 0.0f);
 };
@@ -118,6 +134,7 @@ public:
 private:
 	
 	class APlayerController* playerController;
+	class AFPSCharacter* playerCharacter;
 	const class USkeletalMeshSocket* barrelSocket;
 
 	// Stats
@@ -127,6 +144,10 @@ private:
 	TSubclassOf<class UCameraShakeBase> recoilCameraShakeClass;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Statistics", meta = (AllowPrivateAccess = "true"))
 	FWeaponStats weaponStats;
+	
+	// Clipping
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Clipping", meta = (AllowPrivateAccess = "true"))
+	FClippingSettings clippingSettings;
 
 	// Attachments
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon Attachments", meta = (AllowPrivateAccess = "true"))
@@ -151,6 +172,7 @@ private:
 
 	void RecoilUpdate();
 	void AddRecoil();
+	void DetectClipping();
 	void FireSingle(FTransform& socketTransform, FActorSpawnParameters& params);
 
 	void SetDefaultSocketLocations();

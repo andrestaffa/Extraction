@@ -3,6 +3,7 @@
 
 #include "Weapon.h"
 #include "Bullet.h"
+#include "FPSCharacter.h"
 #include "WeaponAttachment.h"
 
 #include "Kismet/GameplayStatics.h"
@@ -22,12 +23,16 @@ void AWeapon::BeginPlay() {
 	Super::BeginPlay();
 
 	this->playerController = UGameplayStatics::GetPlayerController(this, 0);
+	this->playerCharacter = Cast<AFPSCharacter>(this->GetOwner());
 	this->barrelSocket = this->GetItemSkeletalMesh()->GetSocketByName("Muzzle");
 	this->weaponStats.currentFiringMode = this->GetWeaponStats().availableFiringModes[0];
 
+	this->NullChecks();
 	this->SetDefaultSocketLocations();
 	this->SetDefaultAttachments();
-	this->NullChecks();
+
+	this->clippingSettings.intialClipPostion = this->playerCharacter->GetActorLocation() - this->GetActorLocation();
+	this->clippingSettings.targetGunClipPostion = this->clippingSettings.intialClipPostion + (this->GetActorForwardVector() * 50.0f);
 }
 
 // Called every frame
@@ -35,17 +40,19 @@ void AWeapon::Tick(float DeltaTime) {
 	Super::Tick(DeltaTime);
 
 	this->RecoilUpdate();
+	this->DetectClipping();
 }
 
 void AWeapon::NullChecks() {
 	if (!this->playerController) GEngine->AddOnScreenDebugMessage(-1, 20.0f, FColor::Red, FString::Printf(TEXT("[AWeapon]: playerController* is NULL")), false);
+	if (!this->playerCharacter) GEngine->AddOnScreenDebugMessage(-1, 20.0f, FColor::Red, FString::Printf(TEXT("[AWeapon]: playerCharacter* is NULL")), false);
 	if (!this->barrelSocket) GEngine->AddOnScreenDebugMessage(-1, 20.0f, FColor::Red, FString::Printf(TEXT("[AWeapon]: barrelSocket* is NULL")), false);
 	if (!this->bulletClass) GEngine->AddOnScreenDebugMessage(-1, 20.0f, FColor::Red, FString::Printf(TEXT("[AWeapon]: bulletClass* is NULL")), false);
 	if (!this->recoilCameraShakeClass) GEngine->AddOnScreenDebugMessage(-1, 20.0f, FColor::Red, FString::Printf(TEXT("[AWeapon]: recoilCameraShakeClass* is NULL")), false);
 }
 
 void AWeapon::SetDefaultSocketLocations() {
-	if (USkeletalMeshSocket* ironSightSocket = const_cast<USkeletalMeshSocket*>(this->GetItemSkeletalMesh()->GetSocketByName("IronSight")))
+	if (USkeletalMeshSocket* ironSightSocket = const_cast<USkeletalMeshSocket*>(this->GetItemSkeletalMesh()->GetSocketByName("IronSight"))) 
 		ironSightSocket->RelativeLocation = this->scope.defaultScopePosition;
 	if (USkeletalMeshSocket* leftHandPlacementSocket = const_cast<USkeletalMeshSocket*>(this->GetItemSkeletalMesh()->GetSocketByName("LeftHandPlacement")))
 		leftHandPlacementSocket->RelativeLocation = this->grip.defaultGripPosition;
@@ -60,6 +67,27 @@ void AWeapon::SetDefaultAttachments() {
 void AWeapon::RecoilUpdate() {
 	if (!this->isShooting() || !this->playerController) return;
 	this->AddRecoil();
+}
+
+void AWeapon::DetectClipping() {
+	FTransform socketTransform = this->barrelSocket->GetSocketTransform(this->GetItemSkeletalMesh());
+	FVector start = socketTransform.GetLocation();
+	FVector end = start + (this->GetActorRotation().Vector() * 100.0f * -1.0f);
+	FHitResult hitResult;
+	if (this->GetWorld()->LineTraceSingleByChannel(hitResult, start, end, ECollisionChannel::ECC_Visibility)) {
+		float distance = (hitResult.ImpactPoint - start).Length();
+		this->clippingSettings.normalizedDistanceRange = 1.0f - ((distance - 0.0f) / (100.0f - 0.0f));
+		this->clippingSettings.clippingLerpValue = FMath::FInterpTo(this->clippingSettings.clippingLerpValue, this->clippingSettings.normalizedDistanceRange, this->GetWorld()->GetDeltaSeconds(), 4.5f);
+		FVector targetLerp = FMath::Lerp<FVector>(this->clippingSettings.intialClipPostion, this->clippingSettings.targetGunClipPostion, this->clippingSettings.clippingLerpValue);
+		this->SetActorRelativeLocation(targetLerp);
+		this->weaponStats.bIsClipping = true;
+		this->playerCharacter->GetMovementSettings().ADSEnabled = false;
+	} else {
+		this->clippingSettings.clippingLerpValue = FMath::FInterpTo(this->clippingSettings.clippingLerpValue, 0.0f, GetWorld()->GetDeltaSeconds(), 4.5f);
+		FVector initialLerp = FMath::Lerp<FVector>(this->clippingSettings.intialClipPostion, this->clippingSettings.targetGunClipPostion, this->clippingSettings.clippingLerpValue);
+		this->SetActorRelativeLocation(initialLerp);
+		this->weaponStats.bIsClipping = false;
+	}
 }
 
 void AWeapon::Shoot() {

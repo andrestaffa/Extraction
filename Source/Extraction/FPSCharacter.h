@@ -34,6 +34,7 @@ struct FMovementSettings
 {
 	GENERATED_BODY()
 
+	// Character Movement
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float sprintSpeed = 600.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
@@ -50,12 +51,12 @@ struct FMovementSettings
 	float adsMoveRightWalkSpeedMultiplier = 0.6f;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float sprintMoveRightStrafeSpeedMultiplier = 0.4f;
-	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	float crouchInitializeSpeed = sprintSpeed - 50.0f;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	float startSlideCancelSpeed = walkSpeed - 100.0f;
 
+	// Parkour
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float parkourReachDistance = 200.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
@@ -73,10 +74,72 @@ struct FMovementSettings
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float legPosOffset = -70.0f;
 
+	// Leaning
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float leanDistance = 20.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float leanInterpTime = 5.0f;
+
+	// Camera Shake
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TSubclassOf<class UCameraShakeBase> headBobWalkCameraShake;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TSubclassOf<class UCameraShakeBase> headBobSprintCameraShake;
+
+	// Mouse Movement
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	float moveForwardValue = 0.0f;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	float moveRightValue = 0.0f;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	float turnValue = 0.0f;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	float lookValue = 0.0f;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	float turnValueController = 0.0f;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	float lookValueController = 0.0f;
+
+	// Crouching/Proning
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	bool isCrouching = false;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	bool isProning = false;
+
+	// Jumping/Vaulting/Sliding/Climbing
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	bool isVaulting = false;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	bool isClimbing = false;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	bool isSliding = false;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	class UAnimMontage* vaultMontage;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	class UAnimMontage* climbMontage;
+	FTimerHandle slideTimerHandle;
+
+	// Sprinting
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	bool isSprinting = false;
+	bool runButtonPressed = false;
+	
+	// Reloading
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	bool isReloading = false;
+	FTimerHandle reloadTimerHandle;
+
+	// Leaning
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	float leanValue = 0.0f;
+
+	// ADS
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	bool bAdsButtonPressed = false;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	bool ADSEnabled = false;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	float ADSValue = 0.0f;
 
 };
 
@@ -99,7 +162,6 @@ public:
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
 
 private:
 
@@ -127,70 +189,6 @@ private:
 	void FireButtonReleased();
 
 	void FireModeButtonPressed();
-
-
-
-// MARK: - [START] Movement Variables/Functions
-private:
-
-	// Camera Shake
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
-	TSubclassOf<class UCameraShakeBase> headBobWalkCameraShake;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
-	TSubclassOf<class UCameraShakeBase> headBobSprintCameraShake;
-
-	// Mouse Movement
-	UPROPERTY(BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
-	float moveForwardValue;
-	UPROPERTY(BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
-	float moveRightValue;
-	UPROPERTY(BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
-	float turnValue;
-	UPROPERTY(BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
-	float lookValue;
-	UPROPERTY(BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
-	float turnValueController;
-	UPROPERTY(BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
-	float lookValueController;
-
-	// Crouching/Proning
-	UPROPERTY(BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
-	bool isCrouching;
-	UPROPERTY(BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
-	bool isProning;
-
-	// Jumping/Vaulting/Sliding/Climbing
-	UPROPERTY(BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
-	bool isVaulting;
-	UPROPERTY(BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
-	bool isClimbing;
-	UPROPERTY(BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
-	bool isSliding;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement",  meta = (AllowPrivateAccess = "true"))
-	class UAnimMontage* vaultMontage;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement",  meta = (AllowPrivateAccess = "true"))
-	class UAnimMontage* climbMontage;
-	FTimerHandle slideTimerHandle;
-
-	// Sprinting
-	UPROPERTY(BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
-	bool isSprinting;
-	bool runButtonPressed;
-	
-	// Reloading
-	UPROPERTY(BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
-	bool isReloading;
-	FTimerHandle reloadTimerHandle;
-
-	// Leaning
-	UPROPERTY(BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
-	float leanValue;
-
-	// ADS
-	UPROPERTY(BlueprintReadWrite, Category = "Movement", meta = (AllowPrivateAccess = "true"))
-	bool ADSEnabled;
-	UPROPERTY(BlueprintReadWrite, Category = "Movement", meta = (AllowPrivateAccess = "true"))
-	float ADSValue;
 
 protected:
 
@@ -241,14 +239,16 @@ protected:
 	void ADSButtonPressed();
 	void ADSButtonReleased();
 
-// MARK: - [END] Movement Variables/Functions
+
+public:
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE FSensitivitySettings& GetSensitivitySettings() { return this->sensitivitySettings; }
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE FMovementSettings& GetMovementSettings() { return this->movementSettings; }
+
 
 // MARK: - [START] Helpers
-
 private:
 	void CancelTimer(FTimerHandle& timerHandle);
-
-// MARK: - [END] Helpers
-
 
 };
