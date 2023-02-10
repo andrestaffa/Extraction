@@ -49,27 +49,27 @@ void AFPSCharacter::Tick(float DeltaTime) {
 void AFPSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
-	PlayerInputComponent->BindAxis(TEXT("MoveForward"), this, &AFPSCharacter::MoveForward);
-	PlayerInputComponent->BindAxis(TEXT("MoveRight"), this, &AFPSCharacter::MoveRight);
-	PlayerInputComponent->BindAxis(TEXT("Turn"), this, &AFPSCharacter::Turn);
-	PlayerInputComponent->BindAxis(TEXT("LookUp"), this, &AFPSCharacter::LookUp);
-	PlayerInputComponent->BindAxis(TEXT("Lean"), this, &AFPSCharacter::Lean);
-	PlayerInputComponent->BindAxis(TEXT("TurnRate"), this, &AFPSCharacter::TurnRate);
-	PlayerInputComponent->BindAxis(TEXT("LookUpRate"), this, &AFPSCharacter::LookUpRate);
+	PlayerInputComponent->BindAxis(FName("MoveForward"), this, &AFPSCharacter::MoveForward);
+	PlayerInputComponent->BindAxis(FName("MoveRight"), this, &AFPSCharacter::MoveRight);
+	PlayerInputComponent->BindAxis(FName("Turn"), this, &AFPSCharacter::Turn);
+	PlayerInputComponent->BindAxis(FName("LookUp"), this, &AFPSCharacter::LookUp);
+	PlayerInputComponent->BindAxis(FName("Lean"), this, &AFPSCharacter::Lean);
+	PlayerInputComponent->BindAxis(FName("TurnRate"), this, &AFPSCharacter::TurnRate);
+	PlayerInputComponent->BindAxis(FName("LookUpRate"), this, &AFPSCharacter::LookUpRate);
 
-	PlayerInputComponent->BindAction(TEXT("Jump"), EInputEvent::IE_Pressed, this, &AFPSCharacter::JumpButtonPressed);
-	PlayerInputComponent->BindAction(TEXT("Jump"), EInputEvent::IE_Released, this, &ACharacter::StopJumping);
-	PlayerInputComponent->BindAction(TEXT("Crouch"), EInputEvent::IE_Pressed, this, &AFPSCharacter::CrouchButtonPressed);
-	PlayerInputComponent->BindAction(TEXT("Prone"), EInputEvent::IE_Pressed, this, &AFPSCharacter::ProneButtonPressed);
-	PlayerInputComponent->BindAction(TEXT("Sprint"), EInputEvent::IE_Pressed, this, &AFPSCharacter::SprintButtonPressed);
-	PlayerInputComponent->BindAction(TEXT("Sprint"), EInputEvent::IE_Released, this, &AFPSCharacter::SprintButtonReleased);
-	PlayerInputComponent->BindAction(TEXT("Reload"), EInputEvent::IE_Pressed, this, &AFPSCharacter::ReloadButtonPressed);
-	PlayerInputComponent->BindAction(TEXT("Fire"), EInputEvent::IE_Pressed, this, &AFPSCharacter::FireButtonPressed);
-	PlayerInputComponent->BindAction(TEXT("Fire"), EInputEvent::IE_Released, this, &AFPSCharacter::FireButtonReleased);
-	PlayerInputComponent->BindAction(TEXT("FireMode"), EInputEvent::IE_Pressed, this, &AFPSCharacter::FireModeButtonPressed);
+	PlayerInputComponent->BindAction(FName("Jump"), EInputEvent::IE_Pressed, this, &AFPSCharacter::JumpButtonPressed);
+	PlayerInputComponent->BindAction(FName("Jump"), EInputEvent::IE_Released, this, &ACharacter::StopJumping);
+	PlayerInputComponent->BindAction(FName("Crouch"), EInputEvent::IE_Pressed, this, &AFPSCharacter::CrouchButtonPressed);
+	PlayerInputComponent->BindAction(FName("Prone"), EInputEvent::IE_Pressed, this, &AFPSCharacter::ProneButtonPressed);
+	PlayerInputComponent->BindAction(FName("Sprint"), EInputEvent::IE_Pressed, this, &AFPSCharacter::SprintButtonPressed);
+	PlayerInputComponent->BindAction(FName("Sprint"), EInputEvent::IE_Released, this, &AFPSCharacter::SprintButtonReleased);
+	PlayerInputComponent->BindAction(FName("Reload"), EInputEvent::IE_Pressed, this, &AFPSCharacter::ReloadButtonPressed);
+	PlayerInputComponent->BindAction(FName("Fire"), EInputEvent::IE_Pressed, this, &AFPSCharacter::FireButtonPressed);
+	PlayerInputComponent->BindAction(FName("Fire"), EInputEvent::IE_Released, this, &AFPSCharacter::FireButtonReleased);
+	PlayerInputComponent->BindAction(FName("FireMode"), EInputEvent::IE_Pressed, this, &AFPSCharacter::FireModeButtonPressed);
 
-	PlayerInputComponent->BindAction(TEXT("ADS"), EInputEvent::IE_Pressed, this, &AFPSCharacter::ADSButtonPressed);
-	PlayerInputComponent->BindAction(TEXT("ADS"), EInputEvent::IE_Released, this, &AFPSCharacter::ADSButtonReleased);
+	PlayerInputComponent->BindAction(FName("ADS"), EInputEvent::IE_Pressed, this, &AFPSCharacter::ADSButtonPressed);
+	PlayerInputComponent->BindAction(FName("ADS"), EInputEvent::IE_Released, this, &AFPSCharacter::ADSButtonReleased);
 }
 
 void AFPSCharacter::NullChecks() {

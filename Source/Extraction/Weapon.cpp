@@ -24,7 +24,7 @@ void AWeapon::BeginPlay() {
 
 	this->playerController = UGameplayStatics::GetPlayerController(this, 0);
 	this->playerCharacter = Cast<AFPSCharacter>(this->GetOwner());
-	this->barrelSocket = this->GetItemSkeletalMesh()->GetSocketByName("Muzzle");
+	this->barrelSocket = this->GetItemSkeletalMesh()->GetSocketByName(FName("Muzzle"));
 	this->weaponStats.currentFiringMode = this->GetWeaponStats().availableFiringModes[0];
 
 	this->NullChecks();
@@ -32,7 +32,7 @@ void AWeapon::BeginPlay() {
 	this->SetDefaultAttachments();
 
 	this->clippingSettings.intialClipPostion = this->playerCharacter->GetActorLocation() - this->GetActorLocation();
-	this->clippingSettings.targetGunClipPostion = this->clippingSettings.intialClipPostion + (this->GetActorForwardVector() * 50.0f);
+	this->clippingSettings.targetGunClipPostion = this->clippingSettings.intialClipPostion + (this->GetActorForwardVector() * 30.0f);
 }
 
 // Called every frame
@@ -52,9 +52,9 @@ void AWeapon::NullChecks() {
 }
 
 void AWeapon::SetDefaultSocketLocations() {
-	if (USkeletalMeshSocket* ironSightSocket = const_cast<USkeletalMeshSocket*>(this->GetItemSkeletalMesh()->GetSocketByName("IronSight"))) 
+	if (USkeletalMeshSocket* ironSightSocket = const_cast<USkeletalMeshSocket*>(this->GetItemSkeletalMesh()->GetSocketByName(FName("IronSight")))) 
 		ironSightSocket->RelativeLocation = this->scope.defaultScopePosition;
-	if (USkeletalMeshSocket* leftHandPlacementSocket = const_cast<USkeletalMeshSocket*>(this->GetItemSkeletalMesh()->GetSocketByName("LeftHandPlacement")))
+	if (USkeletalMeshSocket* leftHandPlacementSocket = const_cast<USkeletalMeshSocket*>(this->GetItemSkeletalMesh()->GetSocketByName(FName("LeftHandPlacement"))))
 		leftHandPlacementSocket->RelativeLocation = this->grip.defaultGripPosition;
 }
 
@@ -72,21 +72,25 @@ void AWeapon::RecoilUpdate() {
 void AWeapon::DetectClipping() {
 	FTransform socketTransform = this->barrelSocket->GetSocketTransform(this->GetItemSkeletalMesh());
 	FVector start = socketTransform.GetLocation();
-	FVector end = start + (this->GetActorRotation().Vector() * 100.0f * -1.0f);
+	FVector end = start + (this->GetActorRotation().Vector() * 55.0f * -1.0f);
 	FHitResult hitResult;
 	if (this->GetWorld()->LineTraceSingleByChannel(hitResult, start, end, ECollisionChannel::ECC_Visibility)) {
 		float distance = (hitResult.ImpactPoint - start).Length();
-		this->clippingSettings.normalizedDistanceRange = 1.0f - ((distance - 0.0f) / (100.0f - 0.0f));
-		this->clippingSettings.clippingLerpValue = FMath::FInterpTo(this->clippingSettings.clippingLerpValue, this->clippingSettings.normalizedDistanceRange, this->GetWorld()->GetDeltaSeconds(), 4.5f);
+		this->clippingSettings.normalizedDistanceRange = 1.0f - ((distance - 0.0f) / (55.0f - 0.0f));
+		this->clippingSettings.clippingLerpValue = FMath::FInterpTo(this->clippingSettings.clippingLerpValue, this->clippingSettings.normalizedDistanceRange, this->GetWorld()->GetDeltaSeconds(), 10.5f);
 		FVector targetLerp = FMath::Lerp<FVector>(this->clippingSettings.intialClipPostion, this->clippingSettings.targetGunClipPostion, this->clippingSettings.clippingLerpValue);
 		this->SetActorRelativeLocation(targetLerp);
 		this->weaponStats.bIsClipping = true;
 		this->playerCharacter->GetMovementSettings().ADSEnabled = false;
+		this->playerCharacter->GetMesh()->HideBoneByName(FName("index_01_r"), EPhysBodyOp::PBO_None);
+		if (this->playerCharacter->GetMovementSettings().isReloading)
+			this->playerCharacter->SetActorLocation(this->playerCharacter->GetActorLocation() - this->playerCharacter->GetActorForwardVector());
 	} else {
-		this->clippingSettings.clippingLerpValue = FMath::FInterpTo(this->clippingSettings.clippingLerpValue, 0.0f, GetWorld()->GetDeltaSeconds(), 4.5f);
+		this->clippingSettings.clippingLerpValue = FMath::FInterpTo(this->clippingSettings.clippingLerpValue, 0.0f, GetWorld()->GetDeltaSeconds(), 10.5f);
 		FVector initialLerp = FMath::Lerp<FVector>(this->clippingSettings.intialClipPostion, this->clippingSettings.targetGunClipPostion, this->clippingSettings.clippingLerpValue);
 		this->SetActorRelativeLocation(initialLerp);
 		this->weaponStats.bIsClipping = false;
+		this->playerCharacter->GetMesh()->UnHideBoneByName(FName("index_01_r"));
 	}
 }
 
@@ -166,15 +170,15 @@ void AWeapon::SetAttachment(TSubclassOf<class AWeaponAttachment> attachmentClass
 	if (AWeaponAttachment* spawnedAttachment = GetWorld()->SpawnActor<AWeaponAttachment>(attachmentClass, FVector::ZeroVector, FRotator::ZeroRotator, params)) {
 		spawnedAttachment->SetActorEnableCollision(false);
 		if (spawnedAttachment->GetAttachmentType() == EWeaponAttachment::EWA_Scope) {
-			spawnedAttachment->AttachToComponent(this->GetItemSkeletalMesh(), FAttachmentTransformRules::KeepRelativeTransform, TEXT("Scope"));
+			spawnedAttachment->AttachToComponent(this->GetItemSkeletalMesh(), FAttachmentTransformRules::KeepRelativeTransform, FName("Scope"));
 			if (USkeletalMeshSocket* ironSightSocket = const_cast<USkeletalMeshSocket*>(this->GetItemSkeletalMesh()->GetSocketByName("IronSight"))) {
 				ironSightSocket->RelativeLocation = (spawnedAttachment->GetIsRangedScope()) ? this->scope.opticalScopePosition : this->scope.scopePosition;
 			}
 		} else if (spawnedAttachment->GetAttachmentType() == EWeaponAttachment::EWA_Barrel) {
-			spawnedAttachment->AttachToComponent(this->GetItemSkeletalMesh(), FAttachmentTransformRules::KeepRelativeTransform, TEXT("Muzzle"));
+			spawnedAttachment->AttachToComponent(this->GetItemSkeletalMesh(), FAttachmentTransformRules::KeepRelativeTransform, FName("Muzzle"));
 		} else if (spawnedAttachment->GetAttachmentType() == EWeaponAttachment::EWA_Grip) {
-			spawnedAttachment->AttachToComponent(this->GetItemSkeletalMesh(), FAttachmentTransformRules::KeepRelativeTransform, TEXT("Grip"));
-			if (USkeletalMeshSocket* leftHandPlacementSocket = const_cast<USkeletalMeshSocket*>(this->GetItemSkeletalMesh()->GetSocketByName("LeftHandPlacement"))) {
+			spawnedAttachment->AttachToComponent(this->GetItemSkeletalMesh(), FAttachmentTransformRules::KeepRelativeTransform, FName("Grip"));
+			if (USkeletalMeshSocket* leftHandPlacementSocket = const_cast<USkeletalMeshSocket*>(this->GetItemSkeletalMesh()->GetSocketByName(FName("LeftHandPlacement")))) {
 				leftHandPlacementSocket->RelativeLocation = this->grip.gripPosition;
 			}
 		}
@@ -195,9 +199,9 @@ void AWeapon::RemoveAttacment(AWeaponAttachment* attachment) {
 	if (!attachment || this->attachments.IsEmpty()) return;
 	this->attachments.Remove(attachment);
 	if (attachment->GetAttachmentType() == EWeaponAttachment::EWA_Scope) {
-		if (USkeletalMeshSocket *ironSightSocket = const_cast<USkeletalMeshSocket *>(this->GetItemSkeletalMesh()->GetSocketByName("IronSight"))) ironSightSocket->RelativeLocation = this->scope.defaultScopePosition;
+		if (USkeletalMeshSocket *ironSightSocket = const_cast<USkeletalMeshSocket *>(this->GetItemSkeletalMesh()->GetSocketByName(FName("IronSight")))) ironSightSocket->RelativeLocation = this->scope.defaultScopePosition;
 	} else if (attachment->GetAttachmentType() == EWeaponAttachment::EWA_Grip) {
-		if (USkeletalMeshSocket *leftHandPlacementSocket = const_cast<USkeletalMeshSocket *>(this->GetItemSkeletalMesh()->GetSocketByName("LeftHandPlacement"))) leftHandPlacementSocket->RelativeLocation = this->grip.defaultGripPosition;
+		if (USkeletalMeshSocket *leftHandPlacementSocket = const_cast<USkeletalMeshSocket *>(this->GetItemSkeletalMesh()->GetSocketByName(FName("LeftHandPlacement")))) leftHandPlacementSocket->RelativeLocation = this->grip.defaultGripPosition;
 	}
 	attachment->Destroy();
 }
