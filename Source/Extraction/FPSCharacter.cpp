@@ -96,8 +96,16 @@ void AFPSCharacter::AdjustCamera() {
 	if (components.IsEmpty()) { return; }
 	if (UCameraComponent* camera = components[0]) {
 		this->sensitivitySettings.affectedFOV = (this->sensitivitySettings.bAffectedFOV) ? this->sensitivitySettings.FOV - 10 : 80;
-		float scalar = (float(this->sensitivitySettings.FOV) / 90.0f) * 1.0f;
-		FVector result = FVector(camera->GetRelativeLocation().X, camera->GetRelativeLocation().Y, camera->GetRelativeLocation().Z) * scalar;
+		float normalizedRange = ((this->sensitivitySettings.FOV - 90.0f) / (110.0f - 90.0f));
+		float lerpValue = FMath::Lerp<float>(1.0f, 1.5f, normalizedRange);
+		FVector result = camera->GetRelativeLocation() * lerpValue;
+		if (lerpValue > 1.01f) {
+			GEngine->Exec( GetWorld(), TEXT("r.Upscale.Panini.D 0.45"));
+			GEngine->Exec( GetWorld(), TEXT("r.Upscale.Panini.s 0.15"));
+		} else {
+			GEngine->Exec( GetWorld(), TEXT("r.Upscale.Panini.D 0"));
+			GEngine->Exec( GetWorld(), TEXT("r.Upscale.Panini.s 0"));
+		}
 		camera->SetRelativeLocation(result);
 	}
 }
@@ -257,6 +265,7 @@ void AFPSCharacter::ProneButtonPressed() {
 }
 
 void AFPSCharacter::JumpButtonPressed() {
+	GetWorld()->GetFirstPlayerController()->ClientStartCameraShake(this->movementSettings.headBobSprintCameraShake, 2.0f);
 	this->Jump();
 	this->SetupParkour();
 	this->SlideCancel();
