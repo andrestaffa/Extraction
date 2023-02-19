@@ -31,7 +31,7 @@ void AFPSCharacter::BeginPlay() {
 	Super::BeginPlay();
 
 	this->AdjustCamera();
-	this->SpawnDefaultWeapon();
+	this->SpawnDefaultWeapons();
 	this->NullChecks();
 }
 
@@ -67,9 +67,10 @@ void AFPSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 	PlayerInputComponent->BindAction(FName("Fire"), EInputEvent::IE_Pressed, this, &AFPSCharacter::FireButtonPressed);
 	PlayerInputComponent->BindAction(FName("Fire"), EInputEvent::IE_Released, this, &AFPSCharacter::FireButtonReleased);
 	PlayerInputComponent->BindAction(FName("FireMode"), EInputEvent::IE_Pressed, this, &AFPSCharacter::FireModeButtonPressed);
-
 	PlayerInputComponent->BindAction(FName("ADS"), EInputEvent::IE_Pressed, this, &AFPSCharacter::ADSButtonPressed);
 	PlayerInputComponent->BindAction(FName("ADS"), EInputEvent::IE_Released, this, &AFPSCharacter::ADSButtonReleased);
+	PlayerInputComponent->BindAction(FName("WeaponSwitch"), EInputEvent::IE_Pressed, this, &AFPSCharacter::SwitchWeaponButtonPressed);
+	PlayerInputComponent->BindAction(FName("Interact"), EInputEvent::IE_Pressed, this, &AFPSCharacter::InteractButtonPressed);
 }
 
 void AFPSCharacter::NullChecks() {
@@ -99,6 +100,7 @@ void AFPSCharacter::AdjustCamera() {
 		float normalizedRange = ((this->sensitivitySettings.FOV - 90.0f) / (110.0f - 90.0f));
 		float lerpValue = FMath::Lerp<float>(1.0f, 1.5f, normalizedRange);
 		FVector result = camera->GetRelativeLocation() * lerpValue;
+		camera->SetFieldOfView(this->sensitivitySettings.FOV);
 		if (lerpValue > 1.01f) {
 			GEngine->Exec( GetWorld(), TEXT("r.Upscale.Panini.D 0.45"));
 			GEngine->Exec( GetWorld(), TEXT("r.Upscale.Panini.s 0.15"));
@@ -110,23 +112,61 @@ void AFPSCharacter::AdjustCamera() {
 	}
 }
 
-void AFPSCharacter::SpawnDefaultWeapon() {
-	if (this->weaponClass) {
-		FActorSpawnParameters params;
-		params.Owner = this;
-		this->equippedWeapon = GetWorld()->SpawnActor<AWeapon>(this->weaponClass, this->GetActorTransform(), params);
-		if (this->equippedWeapon) {
-			this->equippedWeapon->AttachToComponent(this->GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, FName("RightHand"));
-		} else {
-			GEngine->AddOnScreenDebugMessage(-1, 20.0f, FColor::Red, FString::Printf(TEXT("[AFPSCharacter]: equippedWeapon* is NULL")), false);
-		}
-	} else {
-		GEngine->AddOnScreenDebugMessage(-1, 20.0f, FColor::Red, FString::Printf(TEXT("[AFPSCharacter]: weaponClass* is NULL")), false);
+void AFPSCharacter::SpawnDefaultWeapons() {
+	if (this->playerLoadout.primaryWeapon) this->playerLoadout.weaponClasses.Add(this->playerLoadout.primaryWeapon);
+	if (this->playerLoadout.secondaryWeapon) this->playerLoadout.weaponClasses.Add(this->playerLoadout.secondaryWeapon);
+	if (this->playerLoadout.holsterWeapon) this->playerLoadout.weaponClasses.Add(this->playerLoadout.holsterWeapon);
+	TSubclassOf<class AWeapon> weaponClass = this->FindWeaponClass();
+	if (weaponClass == this->playerLoadout.primaryWeapon) {
+		this->SpawnWeapon(weaponClass, EWeaponSlot::EWS_Primary);
+	} else if (weaponClass == this->playerLoadout.secondaryWeapon) {
+		this->SpawnWeapon(weaponClass, EWeaponSlot::EWS_Secondary);
+	} else if (weaponClass == this->playerLoadout.holsterWeapon) {
+		this->SpawnWeapon(weaponClass, EWeaponSlot::EWS_Holster);
 	}
 }
 
+void AFPSCharacter::SpawnWeapon(TSubclassOf<AWeapon> weaponClass, EWeaponSlot weaponSlot) {
+	if (this->equippedWeapon) { this->equippedWeapon->Destroy(); this->equippedWeapon = nullptr; }
+	if (!weaponClass) { GEngine->AddOnScreenDebugMessage(-1, 20.0f, FColor::Red, FString::Printf(TEXT("[AFPSCharacter]: weaponClass* is NULL")), false); return; }
+	if (weaponSlot == EWeaponSlot::EWS_Primary) {
+		this->playerLoadout.primaryWeapon = weaponClass;
+	} else if (weaponSlot == EWeaponSlot::EWS_Secondary) {
+		this->playerLoadout.secondaryWeapon = weaponClass;
+	} else if (weaponSlot == EWeaponSlot::EWS_Holster) {
+		this->playerLoadout.holsterWeapon = weaponClass;
+	} else { return; }
+	FActorSpawnParameters params;
+	params.Owner = this;
+	this->equippedWeapon = GetWorld()->SpawnActor<AWeapon>(weaponClass, this->GetActorLocation(), FRotator::ZeroRotator, params);
+	if (this->equippedWeapon) {
+		this->equippedWeapon->AttachToComponent(this->GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, FName("RightHand"));
+	} else {
+		GEngine->AddOnScreenDebugMessage(-1, 20.0f, FColor::Red, FString::Printf(TEXT("[AFPSCharacter]: equippedWeapon* is NULL")), false);
+	}
+}
+
+bool AFPSCharacter::HasWeapon() {
+	return this->playerLoadout.weaponClasses.Num() > 1;
+}
+
+TSubclassOf<class AWeapon> AFPSCharacter::FindWeaponClass() {
+	if (!this->playerLoadout.primaryWeapon && !this->playerLoadout.secondaryWeapon && !this->playerLoadout.holsterWeapon) return nullptr;
+	if (this->playerLoadout.primaryWeapon && !this->playerLoadout.secondaryWeapon && !this->playerLoadout.holsterWeapon) return this->playerLoadout.primaryWeapon;
+	if (this->playerLoadout.secondaryWeapon && !this->playerLoadout.primaryWeapon && !this->playerLoadout.holsterWeapon) return this->playerLoadout.secondaryWeapon;
+	if (this->playerLoadout.holsterWeapon && !this->playerLoadout.primaryWeapon && !this->playerLoadout.secondaryWeapon) return this->playerLoadout.holsterWeapon;
+	return this->playerLoadout.primaryWeapon;
+}
+
+void AFPSCharacter::SpawnWeapon(AWeapon* weapon, EWeaponSlot weaponSlot) {
+	if (!weapon) return;
+	UClass* weaponClass = weapon->GetClass();
+	TSubclassOf<AWeapon> attachmentSubClass = TSoftClassPtr<AWeapon>(weaponClass).Get();
+	this->SpawnWeapon(weaponClass, weaponSlot);
+}
+
 void AFPSCharacter::FireButtonPressed() {
-	if (!this->equippedWeapon || this->movementSettings.isReloading) return;
+	if (!this->equippedWeapon || this->movementSettings.isReloading || this->playerLoadout.bIsSwitchingWeapon) return;
 	this->equippedWeapon->Shoot();
 }
 
@@ -136,14 +176,14 @@ void AFPSCharacter::FireButtonReleased() {
 }
 
 void AFPSCharacter::FireModeButtonPressed() {
-	if (!this->equippedWeapon || this->movementSettings.isReloading) return;
+	if (!this->equippedWeapon || this->movementSettings.isReloading || this->playerLoadout.bIsSwitchingWeapon) return;
 	if (this->equippedWeapon->isShooting()) return;
 	this->equippedWeapon->ChangeFiringMode();
 }
 
 void AFPSCharacter::MovementUpdate() {
 	if (this->movementSettings.ADSEnabled || this->movementSettings.moveForwardValue <= -1.0f || (this->movementSettings.moveRightValue != 0.0f && this->movementSettings.moveForwardValue == 0.0f) || this->movementSettings.isVaulting || this->movementSettings.isClimbing 
-		|| this->equippedWeapon->isShooting()) {
+		|| this->GetVelocity().Length() <= this->movementSettings.walkSpeed - 50.0f || (this->equippedWeapon && this->equippedWeapon->isShooting()) || this->playerLoadout.bIsSwitchingWeapon) {
 		this->ToggleSprint(false);
 		return;
 	}
@@ -178,7 +218,7 @@ void AFPSCharacter::SlideUpdate() {
 
 void AFPSCharacter::ADSUpdate() {
 	if (!this->equippedWeapon) return;
-	this->movementSettings.ADSEnabled = !this->equippedWeapon->GetWeaponStats().bIsClipping && this->movementSettings.bAdsButtonPressed;
+	this->movementSettings.ADSEnabled = !this->playerLoadout.bIsSwitchingWeapon && !this->equippedWeapon->GetWeaponStats().bIsClipping && this->movementSettings.bAdsButtonPressed;
 	float adsSpeed = this->equippedWeapon->GetWeaponStats().adsSpeed;
 	this->movementSettings.ADSValue = (this->movementSettings.ADSEnabled) ? FMath::FInterpTo(this->movementSettings.ADSValue, 1.0f, GetWorld()->GetDeltaSeconds(), adsSpeed) : FMath::FInterpTo(this->movementSettings.ADSValue, 0.0f, GetWorld()->GetDeltaSeconds(), adsSpeed);
 	this->equippedWeapon->SetADSValue(this->movementSettings.ADSValue);
@@ -265,6 +305,7 @@ void AFPSCharacter::ProneButtonPressed() {
 }
 
 void AFPSCharacter::JumpButtonPressed() {
+	if (this->playerLoadout.bIsSwitchingWeapon) return;
 	GetWorld()->GetFirstPlayerController()->ClientStartCameraShake(this->movementSettings.headBobSprintCameraShake, 2.0f);
 	this->Jump();
 	this->SetupParkour();
@@ -293,7 +334,7 @@ void AFPSCharacter::ToggleSprint(bool toggle) {
 }
 
 void AFPSCharacter::ReloadButtonPressed() {
-	if (this->movementSettings.isReloading) return;
+	if (this->movementSettings.isReloading || this->playerLoadout.bIsSwitchingWeapon || !this->equippedWeapon) return;
 	if (!this->movementSettings.isSprinting && !this->movementSettings.ADSEnabled) {
 		this->movementSettings.isReloading = true;
 		this->equippedWeapon->StopShooting();
@@ -315,13 +356,102 @@ void AFPSCharacter::Lean(float axisValue) {
 
 void AFPSCharacter::ADSButtonPressed() {
 	this->movementSettings.bAdsButtonPressed = true;
-	if (this->equippedWeapon && this->equippedWeapon->GetWeaponStats().bIsClipping) { this->movementSettings.ADSEnabled = false; return; }
+	if (this->equippedWeapon && this->equippedWeapon->GetWeaponStats().bIsClipping || this->playerLoadout.bIsSwitchingWeapon) { this->movementSettings.ADSEnabled = false; return; }
 	this->movementSettings.ADSEnabled = true;
 }
 
 void AFPSCharacter::ADSButtonReleased() {
 	this->movementSettings.bAdsButtonPressed = false;
 	this->movementSettings.ADSEnabled = false;
+}
+
+void AFPSCharacter::SwitchWeaponButtonPressed(FKey keyPressed) {
+	if (this->movementSettings.isReloading || this->movementSettings.isClimbing || this->movementSettings.isVaulting || this->movementSettings.isSliding || 
+		this->GetCharacterMovement()->IsFalling() || !this->HasWeapon()) return;
+	this->playerLoadout.bIsSwitchingWeapon = true;
+	this->movementSettings.isReloading = false;
+	this->movementSettings.ADSEnabled = false;
+	if (this->equippedWeapon) this->equippedWeapon->StopShooting();
+	FString keyName = keyPressed.ToString();
+	if (keyName.Equals("One")) {
+		if (!this->playerLoadout.primaryWeapon) return;
+		this->PlayAnimMontage(this->playerLoadout.weaponSwitchMontage);
+		GetWorldTimerManager().SetTimer(this->playerLoadout.weaponSwitchTimerHandle_1, [&](){ 
+			this->playerLoadout.bIsSwitchingWeapon = false;
+		}, 1.15f, false);
+		GetWorldTimerManager().SetTimer(this->playerLoadout.weaponSwitchTimerHandle_2, [&](){ 
+			this->playerLoadout.weaponIndex = 0;
+			this->SpawnWeapon(this->playerLoadout.primaryWeapon, EWeaponSlot::EWS_Primary);
+		}, 1.15f / 2.0f, false);
+	} else if (keyName.Equals("Two")) {
+		if (!this->playerLoadout.secondaryWeapon) return;
+		this->PlayAnimMontage(this->playerLoadout.weaponSwitchMontage);
+		GetWorldTimerManager().SetTimer(this->playerLoadout.weaponSwitchTimerHandle_1, [&](){ 
+			this->playerLoadout.bIsSwitchingWeapon = false;
+		}, 1.15f, false);
+		GetWorldTimerManager().SetTimer(this->playerLoadout.weaponSwitchTimerHandle_2, [&](){ 
+			this->SpawnWeapon(this->playerLoadout.secondaryWeapon, EWeaponSlot::EWS_Secondary);
+			this->playerLoadout.weaponIndex = 1;
+		}, 1.15f / 2.0f, false);
+	} else if (keyName.Equals("Three")) {
+		if (!this->playerLoadout.holsterWeapon) return;
+		this->PlayAnimMontage(this->playerLoadout.weaponSwitchMontage);
+		GetWorldTimerManager().SetTimer(this->playerLoadout.weaponSwitchTimerHandle_1, [&](){ 
+			this->playerLoadout.bIsSwitchingWeapon = false;
+		}, 1.15f, false);
+		GetWorldTimerManager().SetTimer(this->playerLoadout.weaponSwitchTimerHandle_2, [&](){ 
+			this->playerLoadout.weaponIndex = 2;
+			this->SpawnWeapon(this->playerLoadout.holsterWeapon, EWeaponSlot::EWS_Holster);
+		}, 1.15f / 2.0f, false);
+	} else {
+		this->PlayAnimMontage(this->playerLoadout.weaponSwitchMontage);
+		GetWorldTimerManager().SetTimer(this->playerLoadout.weaponSwitchTimerHandle_1, [&](){ 
+			this->playerLoadout.bIsSwitchingWeapon = false;
+		}, 1.15f, false);
+		GetWorldTimerManager().SetTimer(this->playerLoadout.weaponSwitchTimerHandle_2, [this, keyName](){ 
+		if (keyName.Equals("MouseScrollUp") || keyName.Equals("Gamepad_FaceButton_Top")) {
+			this->playerLoadout.weaponIndex++;
+			if (this->playerLoadout.weaponIndex >= this->playerLoadout.weaponClasses.Num()) this->playerLoadout.weaponIndex = 0;
+			if (this->playerLoadout.weaponIndex == 0) {
+				if (!this->playerLoadout.primaryWeapon) { this->SpawnWeapon(this->playerLoadout.secondaryWeapon, EWeaponSlot::EWS_Secondary); this->playerLoadout.weaponIndex = 1; }
+				else this->SpawnWeapon(this->playerLoadout.primaryWeapon, EWeaponSlot::EWS_Primary);
+			} else if (this->playerLoadout.weaponIndex == 1) {
+				if (!this->playerLoadout.secondaryWeapon) { this->SpawnWeapon(this->playerLoadout.holsterWeapon, EWeaponSlot::EWS_Holster); this->playerLoadout.weaponIndex = 2;  }
+				else this->SpawnWeapon(this->playerLoadout.secondaryWeapon, EWeaponSlot::EWS_Secondary);
+			} else if (this->playerLoadout.weaponIndex == 2) {
+				if (!this->playerLoadout.holsterWeapon) { this->SpawnWeapon(this->playerLoadout.primaryWeapon, EWeaponSlot::EWS_Primary); this->playerLoadout.weaponIndex = 0; }
+				else this->SpawnWeapon(this->playerLoadout.holsterWeapon, EWeaponSlot::EWS_Holster);
+			}
+		} else if (keyName.Equals("MouseScrollDown")) {
+			this->playerLoadout.weaponIndex--;
+			if (this->playerLoadout.weaponIndex < 0) this->playerLoadout.weaponIndex = 2;
+			if (this->playerLoadout.weaponIndex == 0) {
+				if (!this->playerLoadout.primaryWeapon) { this->SpawnWeapon(this->playerLoadout.holsterWeapon, EWeaponSlot::EWS_Holster); this->playerLoadout.weaponIndex = 2; }
+				else this->SpawnWeapon(this->playerLoadout.primaryWeapon, EWeaponSlot::EWS_Primary);
+			} else if (this->playerLoadout.weaponIndex == 1) {
+				if (!this->playerLoadout.secondaryWeapon) { this->SpawnWeapon(this->playerLoadout.primaryWeapon, EWeaponSlot::EWS_Primary); this->playerLoadout.weaponIndex = 0;  }
+				else this->SpawnWeapon(this->playerLoadout.secondaryWeapon, EWeaponSlot::EWS_Secondary);
+			} else if (this->playerLoadout.weaponIndex == 2) {
+				if (!this->playerLoadout.holsterWeapon) { this->SpawnWeapon(this->playerLoadout.secondaryWeapon, EWeaponSlot::EWS_Secondary); this->playerLoadout.weaponIndex = 1; }
+				else this->SpawnWeapon(this->playerLoadout.holsterWeapon, EWeaponSlot::EWS_Holster);
+			}
+		}		
+		}, 1.15f / 2.0f, false);
+	}
+}
+
+void AFPSCharacter::InteractButtonPressed(FKey keyPressed) {
+	AController* PlayerController = this->GetController();
+	FVector Location;
+	FRotator Rotation;
+	PlayerController->GetPlayerViewPoint(Location, Rotation);
+	const FVector End = Location + (Rotation.Vector() * 500.0f);
+	FHitResult Hit;
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(PlayerController->GetPawn());
+	if (this->GetWorld()->LineTraceSingleByChannel(Hit, Location, End, ECC_Visibility, Params)) {
+		DrawDebugLine(this->GetWorld(), Location, End, FColor::Red, false, 1.0f);
+	}
 }
 
 void AFPSCharacter::SetupParkour() {
@@ -334,7 +464,10 @@ void AFPSCharacter::SetupParkour() {
 		if (hitResult.GetActor()) {
 			FVector origin;
 			FVector boxExtents;
-			hitResult.GetActor()->GetActorBounds(false, origin, boxExtents, false);	
+			hitResult.GetActor()->GetActorBounds(false, origin, boxExtents, false);
+			this->CancelTimer(this->playerLoadout.weaponSwitchTimerHandle_1);
+			this->CancelTimer(this->playerLoadout.weaponSwitchTimerHandle_2);
+			this->playerLoadout.bIsSwitchingWeapon = false;	
 			if (boxExtents.Z <= (this->capsuleComp->GetScaledCapsuleHalfHeight() / 2.0f)) {
 				this->Vault();
 			} else {
@@ -397,6 +530,9 @@ void AFPSCharacter::Climb() {
 }
 
 void AFPSCharacter::Slide() {
+	this->CancelTimer(this->playerLoadout.weaponSwitchTimerHandle_1);
+	this->CancelTimer(this->playerLoadout.weaponSwitchTimerHandle_2);
+	this->playerLoadout.bIsSwitchingWeapon = false;	
 	this->movementSettings.isSliding = true;
 	this->movementSettings.isSprinting = false;
 	this->movementSettings.runButtonPressed = false;

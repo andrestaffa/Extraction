@@ -143,6 +143,44 @@ struct FMovementSettings
 
 };
 
+UENUM(BlueprintType)
+enum class EWeaponSlot : uint8 {
+	EWS_Primary UMETA(DisplayName = "Primary"),
+	EWS_Secondary UMETA(DisplayName = "Secondary"),
+	EWS_Holster UMETA(DisplayName = "Holster"),
+	EWS_MAX UMETA(DisplayName = "DefaultMAX")
+};
+
+
+USTRUCT(BlueprintType)
+struct FPlayerLoadout
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TSubclassOf<class AWeapon> primaryWeapon;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TSubclassOf<class AWeapon> secondaryWeapon;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TSubclassOf<class AWeapon> holsterWeapon;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	class UAnimMontage* weaponSwitchMontage;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TArray<TSubclassOf<class AWeapon>> weaponClasses;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TArray<class AWeapon*> weapons;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	int weaponIndex = 0;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	bool bIsSwitchingWeapon = false;
+	UPROPERTY()
+	FTimerHandle weaponSwitchTimerHandle_1;
+	UPROPERTY()
+	FTimerHandle weaponSwitchTimerHandle_2;
+
+};
+
 UCLASS()
 class EXTRACTION_API AFPSCharacter : public ACharacter
 {
@@ -169,10 +207,10 @@ private:
 	class UCapsuleComponent* capsuleComp;
 
 	// Weapon
-	UPROPERTY(BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	class AWeapon* equippedWeapon;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
-	TSubclassOf<class AWeapon> weaponClass;
+	FPlayerLoadout playerLoadout;	
 
 	// Settings
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings", meta = (AllowPrivateAccess = "true"))
@@ -182,13 +220,22 @@ private:
 
 private:
 	void NullChecks();
-
-	void SpawnDefaultWeapon();
+	
+	// Weapons
+	void SpawnDefaultWeapons();
+	void SpawnWeapon(TSubclassOf<class AWeapon> weaponClass, EWeaponSlot weaponSlot);
+	bool HasWeapon();
+	TSubclassOf<class AWeapon> FindWeaponClass();
 
 	void FireButtonPressed();
 	void FireButtonReleased();
 
 	void FireModeButtonPressed();
+
+public:
+
+	// Weapons
+	void SpawnWeapon(class AWeapon*, EWeaponSlot weaponSlot);
 
 protected:
 
@@ -238,6 +285,12 @@ protected:
 	// ADS
 	void ADSButtonPressed();
 	void ADSButtonReleased();
+
+	// Weapon Switching
+	void SwitchWeaponButtonPressed(FKey keyPressed);
+
+	// Interaction
+	void InteractButtonPressed(FKey keyPressed);
 
 
 public:

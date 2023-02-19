@@ -197,4 +197,8 @@ public:
 	UFUNCTION(BlueprintCallable)
 	bool hasGripAttachment() const;
 
+private:
+	UFUNCTION()
+	void ActorDestroyed(AActor* Act);
+
 };

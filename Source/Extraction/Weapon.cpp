@@ -31,6 +31,9 @@ void AWeapon::BeginPlay() {
 	this->SetDefaultSocketLocations();
 	this->SetDefaultAttachments();
 
+	this->OnDestroyed.AddDynamic(this, &AWeapon::ActorDestroyed);
+
+	if (!this->playerCharacter || !this->playerCharacter) return;
 	this->clippingSettings.intialClipPostion = this->playerCharacter->GetActorLocation() - this->GetActorLocation();
 	this->clippingSettings.targetGunClipPostion = this->clippingSettings.intialClipPostion + (this->GetActorForwardVector() * 30.0f);
 }
@@ -65,11 +68,12 @@ void AWeapon::SetDefaultAttachments() {
 }
 
 void AWeapon::RecoilUpdate() {
-	if (!this->isShooting() || !this->playerController) return;
+	if (!this->isShooting() || (!this->playerCharacter || !this->playerCharacter)) return;
 	this->AddRecoil();
 }
 
 void AWeapon::DetectClipping() {
+	if (!this->playerCharacter || !this->playerCharacter) return;
 	FTransform socketTransform = this->barrelSocket->GetSocketTransform(this->GetItemSkeletalMesh());
 	FVector start = socketTransform.GetLocation();
 	FVector end = start + (this->GetActorRotation().Vector() * 55.0f * -1.0f);
@@ -218,5 +222,11 @@ bool AWeapon::hasGripAttachment() const {
 		if (attachment->GetAttachmentType() == EWeaponAttachment::EWA_Grip) return true;
 	}
 	return false;
+}
+
+void AWeapon::ActorDestroyed(AActor* Act) {
+	for (AWeaponAttachment* attachment : this->attachments) {
+		attachment->Destroy();
+	}
 }
 
