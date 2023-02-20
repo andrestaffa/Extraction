@@ -71,6 +71,8 @@ void AFPSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 	PlayerInputComponent->BindAction(FName("ADS"), EInputEvent::IE_Released, this, &AFPSCharacter::ADSButtonReleased);
 	PlayerInputComponent->BindAction(FName("WeaponSwitch"), EInputEvent::IE_Pressed, this, &AFPSCharacter::SwitchWeaponButtonPressed);
 	PlayerInputComponent->BindAction(FName("Interact"), EInputEvent::IE_Pressed, this, &AFPSCharacter::InteractButtonPressed);
+	PlayerInputComponent->BindAction(FName("Interact"), EInputEvent::IE_Repeat, this, &AFPSCharacter::InteractButtonHeld);
+	PlayerInputComponent->BindAction(FName("Interact"), EInputEvent::IE_Released, this, &AFPSCharacter::InteractButtonReleased);
 }
 
 void AFPSCharacter::NullChecks() {
@@ -118,10 +120,13 @@ void AFPSCharacter::SpawnDefaultWeapons() {
 	if (this->playerLoadout.holsterWeapon) this->playerLoadout.weaponClasses.Add(this->playerLoadout.holsterWeapon);
 	TSubclassOf<class AWeapon> weaponClass = this->FindWeaponClass();
 	if (weaponClass == this->playerLoadout.primaryWeapon) {
+		this->playerLoadout.weaponIndex = 0;
 		this->SpawnWeapon(weaponClass, EWeaponSlot::EWS_Primary);
 	} else if (weaponClass == this->playerLoadout.secondaryWeapon) {
+		this->playerLoadout.weaponIndex = 1;
 		this->SpawnWeapon(weaponClass, EWeaponSlot::EWS_Secondary);
 	} else if (weaponClass == this->playerLoadout.holsterWeapon) {
+		this->playerLoadout.weaponIndex = 2;
 		this->SpawnWeapon(weaponClass, EWeaponSlot::EWS_Holster);
 	}
 }
@@ -146,15 +151,12 @@ void AFPSCharacter::SpawnWeapon(TSubclassOf<AWeapon> weaponClass, EWeaponSlot we
 	}
 }
 
-bool AFPSCharacter::HasWeapon() {
-	return this->playerLoadout.weaponClasses.Num() > 1;
-}
-
 TSubclassOf<class AWeapon> AFPSCharacter::FindWeaponClass() {
 	if (!this->playerLoadout.primaryWeapon && !this->playerLoadout.secondaryWeapon && !this->playerLoadout.holsterWeapon) return nullptr;
 	if (this->playerLoadout.primaryWeapon && !this->playerLoadout.secondaryWeapon && !this->playerLoadout.holsterWeapon) return this->playerLoadout.primaryWeapon;
 	if (this->playerLoadout.secondaryWeapon && !this->playerLoadout.primaryWeapon && !this->playerLoadout.holsterWeapon) return this->playerLoadout.secondaryWeapon;
 	if (this->playerLoadout.holsterWeapon && !this->playerLoadout.primaryWeapon && !this->playerLoadout.secondaryWeapon) return this->playerLoadout.holsterWeapon;
+	if (this->playerLoadout.secondaryWeapon && this->playerLoadout.holsterWeapon && !this->playerLoadout.primaryWeapon) return this->playerLoadout.secondaryWeapon;
 	return this->playerLoadout.primaryWeapon;
 }
 
@@ -333,7 +335,22 @@ void AFPSCharacter::ToggleSprint(bool toggle) {
 	}
 }
 
-void AFPSCharacter::ReloadButtonPressed() {
+void AFPSCharacter::ReloadButtonPressed(FKey keyPressed) {
+	if (keyPressed.ToString().Equals("Gamepad_FaceButton_Left")) {
+		FTimerHandle timerHandle;
+		GetWorldTimerManager().SetTimer(timerHandle, [&](){
+			if (this->interactionSettings.bIsInteractionHeld) return; 
+			if (this->movementSettings.isReloading || this->playerLoadout.bIsSwitchingWeapon || !this->equippedWeapon) return;
+			if (!this->movementSettings.isSprinting && !this->movementSettings.ADSEnabled) {
+				this->movementSettings.isReloading = true;
+				this->equippedWeapon->StopShooting();
+				GetWorldTimerManager().SetTimer(this->movementSettings.reloadTimerHandle, [&](){
+					this->movementSettings.isReloading = false;
+				}, 2.17f, false);
+			}
+		}, 0.2f, false);
+		return;
+	}
 	if (this->movementSettings.isReloading || this->playerLoadout.bIsSwitchingWeapon || !this->equippedWeapon) return;
 	if (!this->movementSettings.isSprinting && !this->movementSettings.ADSEnabled) {
 		this->movementSettings.isReloading = true;
@@ -367,51 +384,66 @@ void AFPSCharacter::ADSButtonReleased() {
 
 void AFPSCharacter::SwitchWeaponButtonPressed(FKey keyPressed) {
 	if (this->movementSettings.isReloading || this->movementSettings.isClimbing || this->movementSettings.isVaulting || this->movementSettings.isSliding || 
-		this->GetCharacterMovement()->IsFalling() || !this->HasWeapon()) return;
-	this->playerLoadout.bIsSwitchingWeapon = true;
-	this->movementSettings.isReloading = false;
-	this->movementSettings.ADSEnabled = false;
-	if (this->equippedWeapon) this->equippedWeapon->StopShooting();
+		this->GetCharacterMovement()->IsFalling() || this->playerLoadout.weaponClasses.Num() <= 1 || this->playerLoadout.bIsSwitchingWeapon) return;
+	float animSpeed = 1.70f;
+	float animRate = 0.9f;
+	float divisor = 2.0f;
 	FString keyName = keyPressed.ToString();
 	if (keyName.Equals("One")) {
-		if (!this->playerLoadout.primaryWeapon) return;
-		this->PlayAnimMontage(this->playerLoadout.weaponSwitchMontage);
+		if (!this->playerLoadout.primaryWeapon || this->playerLoadout.weaponIndex == 0) return;
+		this->playerLoadout.bIsSwitchingWeapon = true;
+		this->movementSettings.isReloading = false;
+		this->movementSettings.ADSEnabled = false;
+		if (this->equippedWeapon) this->equippedWeapon->StopShooting();
+		this->playerLoadout.weaponIndex = 0;
+		animSpeed = this->PlayAnimMontage(this->playerLoadout.weaponSwitchMontage, animRate);
 		GetWorldTimerManager().SetTimer(this->playerLoadout.weaponSwitchTimerHandle_1, [&](){ 
 			this->playerLoadout.bIsSwitchingWeapon = false;
-		}, 1.15f, false);
+		}, animSpeed, false);
 		GetWorldTimerManager().SetTimer(this->playerLoadout.weaponSwitchTimerHandle_2, [&](){ 
-			this->playerLoadout.weaponIndex = 0;
 			this->SpawnWeapon(this->playerLoadout.primaryWeapon, EWeaponSlot::EWS_Primary);
-		}, 1.15f / 2.0f, false);
+		}, animSpeed / divisor, false);
 	} else if (keyName.Equals("Two")) {
-		if (!this->playerLoadout.secondaryWeapon) return;
-		this->PlayAnimMontage(this->playerLoadout.weaponSwitchMontage);
+		if (!this->playerLoadout.secondaryWeapon || this->playerLoadout.weaponIndex == 1) return;
+		this->playerLoadout.bIsSwitchingWeapon = true;
+		this->movementSettings.isReloading = false;
+		this->movementSettings.ADSEnabled = false;
+		if (this->equippedWeapon) this->equippedWeapon->StopShooting();
+		this->playerLoadout.weaponIndex = 1;
+		animSpeed = this->PlayAnimMontage(this->playerLoadout.weaponSwitchMontage, animRate);
 		GetWorldTimerManager().SetTimer(this->playerLoadout.weaponSwitchTimerHandle_1, [&](){ 
 			this->playerLoadout.bIsSwitchingWeapon = false;
-		}, 1.15f, false);
+		}, animSpeed, false);
 		GetWorldTimerManager().SetTimer(this->playerLoadout.weaponSwitchTimerHandle_2, [&](){ 
 			this->SpawnWeapon(this->playerLoadout.secondaryWeapon, EWeaponSlot::EWS_Secondary);
-			this->playerLoadout.weaponIndex = 1;
-		}, 1.15f / 2.0f, false);
+		}, animSpeed / divisor, false);
 	} else if (keyName.Equals("Three")) {
-		if (!this->playerLoadout.holsterWeapon) return;
-		this->PlayAnimMontage(this->playerLoadout.weaponSwitchMontage);
+		if (!this->playerLoadout.holsterWeapon || this->playerLoadout.weaponIndex == 2) return;
+		this->playerLoadout.bIsSwitchingWeapon = true;
+		this->movementSettings.isReloading = false;
+		this->movementSettings.ADSEnabled = false;
+		if (this->equippedWeapon) this->equippedWeapon->StopShooting();
+		this->playerLoadout.weaponIndex = 2;
+		animSpeed = this->PlayAnimMontage(this->playerLoadout.weaponSwitchMontage, animRate);
 		GetWorldTimerManager().SetTimer(this->playerLoadout.weaponSwitchTimerHandle_1, [&](){ 
 			this->playerLoadout.bIsSwitchingWeapon = false;
-		}, 1.15f, false);
+		}, animSpeed, false);
 		GetWorldTimerManager().SetTimer(this->playerLoadout.weaponSwitchTimerHandle_2, [&](){ 
-			this->playerLoadout.weaponIndex = 2;
 			this->SpawnWeapon(this->playerLoadout.holsterWeapon, EWeaponSlot::EWS_Holster);
-		}, 1.15f / 2.0f, false);
+		}, animSpeed / divisor, false);
 	} else {
-		this->PlayAnimMontage(this->playerLoadout.weaponSwitchMontage);
+		this->playerLoadout.bIsSwitchingWeapon = true;
+		this->movementSettings.isReloading = false;
+		this->movementSettings.ADSEnabled = false;
+		if (this->equippedWeapon) this->equippedWeapon->StopShooting();
+		animSpeed = this->PlayAnimMontage(this->playerLoadout.weaponSwitchMontage, animRate);
 		GetWorldTimerManager().SetTimer(this->playerLoadout.weaponSwitchTimerHandle_1, [&](){ 
 			this->playerLoadout.bIsSwitchingWeapon = false;
-		}, 1.15f, false);
+		}, animSpeed, false);
 		GetWorldTimerManager().SetTimer(this->playerLoadout.weaponSwitchTimerHandle_2, [this, keyName](){ 
 		if (keyName.Equals("MouseScrollUp") || keyName.Equals("Gamepad_FaceButton_Top")) {
 			this->playerLoadout.weaponIndex++;
-			if (this->playerLoadout.weaponIndex >= this->playerLoadout.weaponClasses.Num()) this->playerLoadout.weaponIndex = 0;
+			if (this->playerLoadout.weaponIndex >= 3) this->playerLoadout.weaponIndex = 0;
 			if (this->playerLoadout.weaponIndex == 0) {
 				if (!this->playerLoadout.primaryWeapon) { this->SpawnWeapon(this->playerLoadout.secondaryWeapon, EWeaponSlot::EWS_Secondary); this->playerLoadout.weaponIndex = 1; }
 				else this->SpawnWeapon(this->playerLoadout.primaryWeapon, EWeaponSlot::EWS_Primary);
@@ -436,11 +468,12 @@ void AFPSCharacter::SwitchWeaponButtonPressed(FKey keyPressed) {
 				else this->SpawnWeapon(this->playerLoadout.holsterWeapon, EWeaponSlot::EWS_Holster);
 			}
 		}		
-		}, 1.15f / 2.0f, false);
+		}, animSpeed / divisor, false);
 	}
 }
 
 void AFPSCharacter::InteractButtonPressed(FKey keyPressed) {
+	if (keyPressed.ToString().Equals("Gamepad_FaceButton_Left")) return;
 	AController* PlayerController = this->GetController();
 	FVector Location;
 	FRotator Rotation;
@@ -452,6 +485,31 @@ void AFPSCharacter::InteractButtonPressed(FKey keyPressed) {
 	if (this->GetWorld()->LineTraceSingleByChannel(Hit, Location, End, ECC_Visibility, Params)) {
 		DrawDebugLine(this->GetWorld(), Location, End, FColor::Red, false, 1.0f);
 	}
+}
+
+void AFPSCharacter::InteractButtonHeld(FKey keyPressed) {
+	if (!keyPressed.ToString().Equals("Gamepad_FaceButton_Left") || this->interactionSettings.bIsInteractionHeld) return;
+	this->movementSettings.isReloading = false;
+	this->CancelReloadUpdate();
+	AController* PlayerController = this->GetController();
+	FVector Location;
+	FRotator Rotation;
+	PlayerController->GetPlayerViewPoint(Location, Rotation);
+	const FVector End = Location + (Rotation.Vector() * 500.0f);
+	FHitResult Hit;
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(PlayerController->GetPawn());
+	if (this->GetWorld()->LineTraceSingleByChannel(Hit, Location, End, ECC_Visibility, Params)) {
+		DrawDebugLine(this->GetWorld(), Location, End, FColor::Red, false, 1.0f);
+	}
+	this->interactionSettings.bIsInteractionHeld = true;
+}
+
+void AFPSCharacter::InteractButtonReleased(FKey keyPressed) {
+	if (!keyPressed.ToString().Equals("Gamepad_FaceButton_Left") && this->interactionSettings.bIsInteractionHeld != 1) return;
+	this->interactionSettings.bIsInteractionHeld = false;
+	this->movementSettings.isReloading = false;
+	this->CancelReloadUpdate();
 }
 
 void AFPSCharacter::SetupParkour() {
@@ -577,5 +635,18 @@ void AFPSCharacter::CancelTimer(FTimerHandle& timerHandle) {
 		timerHandle.Invalidate();
 	}
 }
+
+float AFPSCharacter::GetTurnValue() const {
+	if (this->movementSettings.turnValue != 0.0f && this->movementSettings.turnValueController == 0.0f) return this->movementSettings.turnValue;
+	if (this->movementSettings.turnValue == 0.0f && this->movementSettings.turnValueController != 0.0f) return this->movementSettings.turnValueController;
+	return this->movementSettings.turnValue;
+}
+
+float AFPSCharacter::GetLookValue() const {
+	if (this->movementSettings.lookValue != 0.0f && this->movementSettings.lookValueController == 0.0f) return this->movementSettings.lookValue;
+	if (this->movementSettings.lookValue == 0.0f && this->movementSettings.lookValueController != 0.0f) return this->movementSettings.lookValueController;
+	return this->movementSettings.lookValue; 
+}
+
 
 

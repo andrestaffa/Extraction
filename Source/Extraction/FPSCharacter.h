@@ -6,6 +6,14 @@
 #include "GameFramework/Character.h"
 #include "FPSCharacter.generated.h"
 
+UENUM(BlueprintType)
+enum class EWeaponSlot : uint8 {
+	EWS_Primary UMETA(DisplayName = "Primary"),
+	EWS_Secondary UMETA(DisplayName = "Secondary"),
+	EWS_Holster UMETA(DisplayName = "Holster"),
+	EWS_MAX UMETA(DisplayName = "DefaultMAX")
+};
+
 USTRUCT(BlueprintType)
 struct FSensitivitySettings
 {
@@ -117,16 +125,19 @@ struct FMovementSettings
 	class UAnimMontage* vaultMontage;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	class UAnimMontage* climbMontage;
+	UPROPERTY()
 	FTimerHandle slideTimerHandle;
 
 	// Sprinting
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	bool isSprinting = false;
+	UPROPERTY(VisibleAnywhere)
 	bool runButtonPressed = false;
 	
 	// Reloading
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	bool isReloading = false;
+	UPROPERTY()
 	FTimerHandle reloadTimerHandle;
 
 	// Leaning
@@ -140,17 +151,7 @@ struct FMovementSettings
 	bool ADSEnabled = false;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	float ADSValue = 0.0f;
-
 };
-
-UENUM(BlueprintType)
-enum class EWeaponSlot : uint8 {
-	EWS_Primary UMETA(DisplayName = "Primary"),
-	EWS_Secondary UMETA(DisplayName = "Secondary"),
-	EWS_Holster UMETA(DisplayName = "Holster"),
-	EWS_MAX UMETA(DisplayName = "DefaultMAX")
-};
-
 
 USTRUCT(BlueprintType)
 struct FPlayerLoadout
@@ -178,7 +179,15 @@ struct FPlayerLoadout
 	FTimerHandle weaponSwitchTimerHandle_1;
 	UPROPERTY()
 	FTimerHandle weaponSwitchTimerHandle_2;
+};
 
+USTRUCT(BlueprintType)
+struct FInteractionSettings {
+
+	GENERATED_BODY()
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	bool bIsInteractionHeld = false;
 };
 
 UCLASS()
@@ -206,31 +215,29 @@ private:
 	// Components
 	class UCapsuleComponent* capsuleComp;
 
-	// Weapon
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
-	class AWeapon* equippedWeapon;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
-	FPlayerLoadout playerLoadout;	
-
 	// Settings
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings", meta = (AllowPrivateAccess = "true"))
 	FSensitivitySettings sensitivitySettings;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings", meta = (AllowPrivateAccess = "true"))
 	FMovementSettings movementSettings;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Settings", meta = (AllowPrivateAccess = "true"))
+	FInteractionSettings interactionSettings;
+
+	// Weapon Settings
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	class AWeapon* equippedWeapon;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	FPlayerLoadout playerLoadout;	
 
 private:
+
+	// Clean Up
 	void NullChecks();
 	
 	// Weapons
 	void SpawnDefaultWeapons();
 	void SpawnWeapon(TSubclassOf<class AWeapon> weaponClass, EWeaponSlot weaponSlot);
-	bool HasWeapon();
 	TSubclassOf<class AWeapon> FindWeaponClass();
-
-	void FireButtonPressed();
-	void FireButtonReleased();
-
-	void FireModeButtonPressed();
 
 public:
 
@@ -277,7 +284,7 @@ protected:
 	void ToggleSprint(bool toggle);
 
 	// Reloading
-	void ReloadButtonPressed();
+	void ReloadButtonPressed(FKey keyPressed);
 
 	// Leaning
 	void Lean(float axisValue);
@@ -286,19 +293,35 @@ protected:
 	void ADSButtonPressed();
 	void ADSButtonReleased();
 
+	// Firing
+	void FireButtonPressed();
+	void FireButtonReleased();
+
+	// Firing Mode
+	void FireModeButtonPressed();
+
 	// Weapon Switching
 	void SwitchWeaponButtonPressed(FKey keyPressed);
 
 	// Interaction
 	void InteractButtonPressed(FKey keyPressed);
-
+	void InteractButtonHeld(FKey keyPressed);
+	void InteractButtonReleased(FKey keyPressed);
 
 public:
 	UFUNCTION(BlueprintCallable)
-	FORCEINLINE FSensitivitySettings& GetSensitivitySettings() { return this->sensitivitySettings; }
+	FORCEINLINE FSensitivitySettings GetSensitivitySettings() const { return this->sensitivitySettings; }
 	UFUNCTION(BlueprintCallable)
 	FORCEINLINE FMovementSettings& GetMovementSettings() { return this->movementSettings; }
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE FInteractionSettings GetInteractionSettings() const { return this->interactionSettings; }
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE FPlayerLoadout GetPlayerLoadout() const { return this->playerLoadout; }
 
+	UFUNCTION(BlueprintCallable)
+	float GetTurnValue() const;
+	UFUNCTION(BlueprintCallable)
+	float GetLookValue() const;
 
 // MARK: - [START] Helpers
 private:
