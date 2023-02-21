@@ -6,6 +6,23 @@
 #include "GameFramework/Actor.h"
 #include "Bullet.generated.h"
 
+USTRUCT(BlueprintType)
+struct FBulletProperties {
+
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	class UParticleSystem* impactParticles;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	float bulletLifeTime = 10.0f;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	FVector velocity = FVector(0.0f, 0.0f, 0.0f);
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	float bulletLifeSpan = 0.0f;
+
+};
+
 UCLASS()
 class EXTRACTION_API ABullet : public AActor
 {
@@ -28,14 +45,12 @@ private:
 	USceneComponent* rootComp;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Bullet Properties", meta = (AllowPrivateAccess = "true"))
-	UParticleSystem* impactParticles;
+	FBulletProperties bulletProperties;
 
-private:
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Bullet Properties", meta = (AllowPrivateAccess = "true"))
-	float bulletLifeTime;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Bullet Properties", meta = (AllowPrivateAccess = "true"))
+	class AWeapon* weapon;
 
-	FVector velocity;
-	float bulletLifeSpan;
+
 
 private:
 	void NullChecks();

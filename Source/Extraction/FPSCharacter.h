@@ -188,6 +188,8 @@ struct FInteractionSettings {
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	bool bIsInteractionHeld = false;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float interactReachDistance = 150.0f;
 };
 
 UCLASS()
@@ -220,7 +222,7 @@ private:
 	FSensitivitySettings sensitivitySettings;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings", meta = (AllowPrivateAccess = "true"))
 	FMovementSettings movementSettings;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Settings", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings", meta = (AllowPrivateAccess = "true"))
 	FInteractionSettings interactionSettings;
 
 	// Weapon Settings
@@ -307,6 +309,7 @@ protected:
 	void InteractButtonPressed(FKey keyPressed);
 	void InteractButtonHeld(FKey keyPressed);
 	void InteractButtonReleased(FKey keyPressed);
+	void Interact();
 
 public:
 	UFUNCTION(BlueprintCallable)

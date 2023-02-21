@@ -179,13 +179,13 @@ void AFPSCharacter::FireButtonReleased() {
 
 void AFPSCharacter::FireModeButtonPressed() {
 	if (!this->equippedWeapon || this->movementSettings.isReloading || this->playerLoadout.bIsSwitchingWeapon) return;
-	if (this->equippedWeapon->isShooting()) return;
+	if (this->equippedWeapon->IsShooting()) return;
 	this->equippedWeapon->ChangeFiringMode();
 }
 
 void AFPSCharacter::MovementUpdate() {
 	if (this->movementSettings.ADSEnabled || this->movementSettings.moveForwardValue <= -1.0f || (this->movementSettings.moveRightValue != 0.0f && this->movementSettings.moveForwardValue == 0.0f) || this->movementSettings.isVaulting || this->movementSettings.isClimbing 
-		|| this->GetVelocity().Length() <= this->movementSettings.walkSpeed - 50.0f || (this->equippedWeapon && this->equippedWeapon->isShooting()) || this->playerLoadout.bIsSwitchingWeapon) {
+		|| this->GetVelocity().Length() <= this->movementSettings.walkSpeed - 50.0f || (this->equippedWeapon && this->equippedWeapon->IsShooting()) || this->playerLoadout.bIsSwitchingWeapon) {
 		this->ToggleSprint(false);
 		return;
 	}
@@ -472,44 +472,40 @@ void AFPSCharacter::SwitchWeaponButtonPressed(FKey keyPressed) {
 	}
 }
 
+void AFPSCharacter::Interact() {
+	if (this->movementSettings.isClimbing || this->movementSettings.isVaulting || this->movementSettings.isSliding || 
+		this->GetCharacterMovement()->IsFalling() ||this->playerLoadout.bIsSwitchingWeapon) return;
+	AController* PlayerController = this->GetController();
+	FVector start;
+	FRotator rotation;
+	 this->GetController()->GetPlayerViewPoint(start, rotation);
+	const FVector end = start + (rotation.Vector() * this->interactionSettings.interactReachDistance);
+	FHitResult hitResult;
+	FCollisionQueryParams params;
+	params.AddIgnoredActor(PlayerController->GetPawn());
+	if (this->GetWorld()->LineTraceSingleByChannel(hitResult, start, end, ECC_Visibility, params)) {
+		// TODO: - Play Pickup Animation.
+		this->movementSettings.isReloading = false;
+		this->CancelReloadUpdate();
+		DrawDebugLine(this->GetWorld(), start, end, FColor::Blue, false, 1.0f);
+		DrawDebugPoint(GetWorld(), hitResult.ImpactPoint, 10.0f, FColor::Green, false, 3.f);
+	}
+}
+
 void AFPSCharacter::InteractButtonPressed(FKey keyPressed) {
 	if (keyPressed.ToString().Equals("Gamepad_FaceButton_Left")) return;
-	AController* PlayerController = this->GetController();
-	FVector Location;
-	FRotator Rotation;
-	PlayerController->GetPlayerViewPoint(Location, Rotation);
-	const FVector End = Location + (Rotation.Vector() * 500.0f);
-	FHitResult Hit;
-	FCollisionQueryParams Params;
-	Params.AddIgnoredActor(PlayerController->GetPawn());
-	if (this->GetWorld()->LineTraceSingleByChannel(Hit, Location, End, ECC_Visibility, Params)) {
-		DrawDebugLine(this->GetWorld(), Location, End, FColor::Red, false, 1.0f);
-	}
+	this->Interact();
 }
 
 void AFPSCharacter::InteractButtonHeld(FKey keyPressed) {
 	if (!keyPressed.ToString().Equals("Gamepad_FaceButton_Left") || this->interactionSettings.bIsInteractionHeld) return;
-	this->movementSettings.isReloading = false;
-	this->CancelReloadUpdate();
-	AController* PlayerController = this->GetController();
-	FVector Location;
-	FRotator Rotation;
-	PlayerController->GetPlayerViewPoint(Location, Rotation);
-	const FVector End = Location + (Rotation.Vector() * 500.0f);
-	FHitResult Hit;
-	FCollisionQueryParams Params;
-	Params.AddIgnoredActor(PlayerController->GetPawn());
-	if (this->GetWorld()->LineTraceSingleByChannel(Hit, Location, End, ECC_Visibility, Params)) {
-		DrawDebugLine(this->GetWorld(), Location, End, FColor::Red, false, 1.0f);
-	}
 	this->interactionSettings.bIsInteractionHeld = true;
+	this->Interact();
 }
 
 void AFPSCharacter::InteractButtonReleased(FKey keyPressed) {
 	if (!keyPressed.ToString().Equals("Gamepad_FaceButton_Left") && this->interactionSettings.bIsInteractionHeld != 1) return;
 	this->interactionSettings.bIsInteractionHeld = false;
-	this->movementSettings.isReloading = false;
-	this->CancelReloadUpdate();
 }
 
 void AFPSCharacter::SetupParkour() {

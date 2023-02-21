@@ -57,6 +57,15 @@ struct FWeaponStats
 };
 
 USTRUCT(BlueprintType)
+struct FParticleSystems {
+
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	class UParticleSystem* muzzleFlashParticleSystem;
+};
+
+USTRUCT(BlueprintType)
 struct FClippingSettings 
 {
 	GENERATED_BODY()
@@ -158,6 +167,10 @@ private:
 	FWeaponGrip grip;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon Attachments", meta = (AllowPrivateAccess = "true"))
 	TSet<class AWeaponAttachment*> attachments;
+
+	// Particle Systems
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Particle Systems", meta = (AllowPrivateAccess = "true"))
+	FParticleSystems particleSystems;
 	
 public:
 	void Shoot();
@@ -170,15 +183,20 @@ public:
 private:
 	void NullChecks();
 
+	// Recoil
 	void RecoilUpdate();
 	void AddRecoil();
 	void DetectClipping();
 	void FireSingle(FTransform& socketTransform, FActorSpawnParameters& params);
 
+	// Weapon Attachments
 	void SetDefaultSocketLocations();
 	void SetAttachment(TSubclassOf<class AWeaponAttachment> attachmentClass);
 	void SetDefaultAttachments();
 	class AWeaponAttachment* HasAttachment(class AWeaponAttachment* other);
+
+	// Particle Systems
+	void PlayParticleSystem(class UParticleSystem* particleSystem, FVector location, FRotator rotation = FRotator::ZeroRotator);
 
 // MARK: - Getters and Setters
 public:
@@ -188,14 +206,14 @@ public:
 
 	FORCEINLINE TSet<class AWeaponAttachment*> GetWeaponAttachments() const { return this->attachments; }
 
-	FORCEINLINE bool isShooting() const { return this->weaponStats.isShootingFullAuto || !this->weaponStats.bCanShootSingle || this->weaponStats.isShootingBurst; }
+	FORCEINLINE bool IsShooting() const { return this->weaponStats.isShootingFullAuto || !this->weaponStats.bCanShootSingle || this->weaponStats.isShootingBurst; }
 
 	UFUNCTION(BlueprintCallable)
 	FORCEINLINE void SetADSValue(float value) { this->weaponStats.adsValue = value; }
 	void ChangeFiringMode();
 
 	UFUNCTION(BlueprintCallable)
-	bool hasGripAttachment() const;
+	bool HasGripAttachment() const;
 
 private:
 	UFUNCTION()

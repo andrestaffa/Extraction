@@ -9,6 +9,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Engine/SkeletalMeshSocket.h"
 #include "Camera/CameraShakeBase.h"
+#include "Particles/ParticleSystemComponent.h"
 
 // Sets default values
 AWeapon::AWeapon()
@@ -52,6 +53,7 @@ void AWeapon::NullChecks() {
 	if (!this->barrelSocket) GEngine->AddOnScreenDebugMessage(-1, 20.0f, FColor::Red, FString::Printf(TEXT("[AWeapon]: barrelSocket* is NULL")), false);
 	if (!this->bulletClass) GEngine->AddOnScreenDebugMessage(-1, 20.0f, FColor::Red, FString::Printf(TEXT("[AWeapon]: bulletClass* is NULL")), false);
 	if (!this->recoilCameraShakeClass) GEngine->AddOnScreenDebugMessage(-1, 20.0f, FColor::Red, FString::Printf(TEXT("[AWeapon]: recoilCameraShakeClass* is NULL")), false);
+	if (!this->particleSystems.muzzleFlashParticleSystem) GEngine->AddOnScreenDebugMessage(-1, 20.0f, FColor::Red, FString::Printf(TEXT("[AWeapon]: muzzleFlashParticleSystem* is NULL")), false);
 }
 
 void AWeapon::SetDefaultSocketLocations() {
@@ -68,7 +70,7 @@ void AWeapon::SetDefaultAttachments() {
 }
 
 void AWeapon::RecoilUpdate() {
-	if (!this->isShooting() || (!this->playerCharacter || !this->playerCharacter)) return;
+	if (!this->IsShooting() || (!this->playerCharacter || !this->playerCharacter)) return;
 	this->AddRecoil();
 }
 
@@ -101,6 +103,7 @@ void AWeapon::DetectClipping() {
 void AWeapon::Shoot() {
 	if (!this->barrelSocket) { GEngine->AddOnScreenDebugMessage(-1, 20.0f, FColor::Red, FString::Printf(TEXT("[AWeapon]: barrelSocket* is NULL")), false); return; }
 	FTransform socketTransform = this->barrelSocket->GetSocketTransform(this->GetItemSkeletalMesh());
+	this->PlayParticleSystem(this->particleSystems.muzzleFlashParticleSystem, socketTransform.GetLocation(), this->GetActorForwardVector().Rotation());
 	FActorSpawnParameters params;
 	params.Owner = this;
 	FTimerHandle fireTimerHandle;
@@ -217,7 +220,7 @@ AWeaponAttachment* AWeapon::HasAttachment(AWeaponAttachment* other) {
 	return nullptr;
 }
 
-bool AWeapon::hasGripAttachment() const {
+bool AWeapon::HasGripAttachment() const {
 	for (const AWeaponAttachment* attachment : this->attachments) {
 		if (attachment->GetAttachmentType() == EWeaponAttachment::EWA_Grip) return true;
 	}
@@ -230,3 +233,13 @@ void AWeapon::ActorDestroyed(AActor* Act) {
 	}
 }
 
+void AWeapon::PlayParticleSystem(UParticleSystem* particleSystem, FVector location, FRotator rotation) {
+	if (!particleSystem) return;
+	bool flag = false;
+	for (const AWeaponAttachment* attachment : this->attachments) {
+		if (attachment->GetAttachmentType() == EWeaponAttachment::EWA_Barrel) { flag = true; break; }
+	}
+	FVector newPos = (flag) ? location + (this->GetActorForwardVector() * -22.5f) : location;
+	UParticleSystemComponent* spawnedParticleSystem = UGameplayStatics::SpawnEmitterAtLocation(this->GetWorld(), particleSystem, newPos, rotation);
+	spawnedParticleSystem->SetWorldScale3D(FVector(0.20f, 0.20f, 0.20f));
+}
