@@ -28,6 +28,8 @@ void AWeapon::BeginPlay() {
 	this->barrelSocket = this->GetItemSkeletalMesh()->GetSocketByName(FName("Muzzle"));
 	this->weaponStats.currentFiringMode = this->GetWeaponStats().availableFiringModes[0];
 
+	this->GetItemSkeletalMesh()->HideBoneByName(FName("b_gun_rem01"), EPhysBodyOp::PBO_None);
+
 	this->NullChecks();
 	this->SetDefaultSocketLocations();
 	this->SetDefaultAttachments();

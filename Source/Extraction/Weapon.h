@@ -57,6 +57,15 @@ struct FWeaponStats
 };
 
 USTRUCT(BlueprintType)
+struct FWeaponMontages { 
+
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	class UAnimMontage* reloadMontage;
+};
+
+USTRUCT(BlueprintType)
 struct FParticleSystems {
 
 	GENERATED_BODY()
@@ -142,6 +151,7 @@ public:
 
 private:
 	
+	// Player
 	class APlayerController* playerController;
 	class AFPSCharacter* playerCharacter;
 	const class USkeletalMeshSocket* barrelSocket;
@@ -153,6 +163,10 @@ private:
 	TSubclassOf<class UCameraShakeBase> recoilCameraShakeClass;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Statistics", meta = (AllowPrivateAccess = "true"))
 	FWeaponStats weaponStats;
+
+	// Weapon Animations
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon Montages", meta = (AllowPrivateAccess = "true"))
+	FWeaponMontages weaponMontages;
 	
 	// Clipping
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Clipping", meta = (AllowPrivateAccess = "true"))
@@ -171,6 +185,10 @@ private:
 	// Particle Systems
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Particle Systems", meta = (AllowPrivateAccess = "true"))
 	FParticleSystems particleSystems;
+
+	// Right Hand Effector Location (X=-1.000000,Y=-4.000000,Z=2.000000)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Effectors", meta = (AllowPrivateAccess = "true"))
+	FVector rightHandEffectorLocation = FVector(-1.0f, -4.0f, 2.0f);
 	
 public:
 	void Shoot();
@@ -203,8 +221,8 @@ public:
 	UFUNCTION(BlueprintCallable)
 	FORCEINLINE FWeaponStats GetWeaponStats() const { return this->weaponStats; }
 	FORCEINLINE void SetWeaponStats(FWeaponStats stats) { this->weaponStats = stats; }
-
 	FORCEINLINE TSet<class AWeaponAttachment*> GetWeaponAttachments() const { return this->attachments; }
+	FORCEINLINE FWeaponMontages GetWeaponMontages() const { return this->weaponMontages; }
 
 	FORCEINLINE bool IsShooting() const { return this->weaponStats.isShootingFullAuto || !this->weaponStats.bCanShootSingle || this->weaponStats.isShootingBurst; }
 
