@@ -28,7 +28,11 @@ void AWeapon::BeginPlay() {
 	this->barrelSocket = this->GetItemSkeletalMesh()->GetSocketByName(FName("Muzzle"));
 	this->weaponStats.currentFiringMode = this->GetWeaponStats().availableFiringModes[0];
 
+	// Delete these when I replace the MAC-11, Benelli M3 and Kar98k
 	this->GetItemSkeletalMesh()->HideBoneByName(FName("b_gun_rem01"), EPhysBodyOp::PBO_None);
+	this->GetItemSkeletalMesh()->HideBoneByName(FName("bullet"), EPhysBodyOp::PBO_None);
+	this->GetItemSkeletalMesh()->HideBoneByName(FName("bullet-2"), EPhysBodyOp::PBO_None);
+	this->GetItemSkeletalMesh()->HideBoneByName(FName("bullet-3"), EPhysBodyOp::PBO_None);
 
 	this->NullChecks();
 	this->SetDefaultSocketLocations();
@@ -37,8 +41,8 @@ void AWeapon::BeginPlay() {
 	this->OnDestroyed.AddDynamic(this, &AWeapon::ActorDestroyed);
 
 	if (!this->playerCharacter || !this->playerCharacter) return;
-	this->clippingSettings.intialClipPostion = this->playerCharacter->GetActorLocation() - this->GetActorLocation();
-	this->clippingSettings.targetGunClipPostion = this->clippingSettings.intialClipPostion + (this->GetActorForwardVector() * 30.0f);
+	this->clippingSettings.intialClipPostion = this->rightHandEffectorLocation;
+	this->clippingSettings.targetGunClipPostion = this->rightHandEffectorLocation + FVector(25.0f, 0.0f, 0.0f);
 }
 
 // Called every frame
@@ -87,18 +91,16 @@ void AWeapon::DetectClipping() {
 		this->clippingSettings.normalizedDistanceRange = 1.0f - ((distance - 0.0f) / (55.0f - 0.0f));
 		this->clippingSettings.clippingLerpValue = FMath::FInterpTo(this->clippingSettings.clippingLerpValue, this->clippingSettings.normalizedDistanceRange, this->GetWorld()->GetDeltaSeconds(), 10.5f);
 		FVector targetLerp = FMath::Lerp<FVector>(this->clippingSettings.intialClipPostion, this->clippingSettings.targetGunClipPostion, this->clippingSettings.clippingLerpValue);
-		this->SetActorRelativeLocation(targetLerp);
+		this->rightHandEffectorLocation = targetLerp;
 		this->weaponStats.bIsClipping = true;
 		this->playerCharacter->GetMovementSettings().ADSEnabled = false;
-		this->playerCharacter->GetMesh()->HideBoneByName(FName("index_01_r"), EPhysBodyOp::PBO_None);
 		if (this->playerCharacter->GetMovementSettings().isReloading)
 			this->playerCharacter->SetActorLocation(this->playerCharacter->GetActorLocation() - this->playerCharacter->GetActorForwardVector());
 	} else {
 		this->clippingSettings.clippingLerpValue = FMath::FInterpTo(this->clippingSettings.clippingLerpValue, 0.0f, GetWorld()->GetDeltaSeconds(), 10.5f);
 		FVector initialLerp = FMath::Lerp<FVector>(this->clippingSettings.intialClipPostion, this->clippingSettings.targetGunClipPostion, this->clippingSettings.clippingLerpValue);
-		this->SetActorRelativeLocation(initialLerp);
+		this->rightHandEffectorLocation = initialLerp;
 		this->weaponStats.bIsClipping = false;
-		this->playerCharacter->GetMesh()->UnHideBoneByName(FName("index_01_r"));
 	}
 }
 
@@ -168,6 +170,7 @@ const FVector AWeapon::BulletDirection() {
 }
 
 void AWeapon::ChangeFiringMode() {
+	if (this->GetWeaponStats().availableFiringModes[0] == this->GetWeaponStats().availableFiringModes[1]) return;
 	bool cond = this->GetWeaponStats().currentFiringMode == this->GetWeaponStats().availableFiringModes[0];
 	this->weaponStats.currentFiringMode = (cond) ? this->GetWeaponStats().availableFiringModes[1] : this->GetWeaponStats().availableFiringModes[0];
 }

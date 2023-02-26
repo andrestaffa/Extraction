@@ -7,13 +7,21 @@
 #include "Weapon.generated.h"
 
 UENUM(BlueprintType)
+enum class EWeaponType : uint8 {
+	EWT_AR UMETA(DisplayName = "AR"),
+	EWT_PistolSMG UMETA(DisplayName = "Pistol/SMG"),
+	EWT_Sniper UMETA(DisplayName = "Sniper"),
+	EWT_Shotgun UMETA(DisplayName = "Shotgun"),
+	EWT_MAX UMETA(DisplayName = "DefaultMAX")
+};
+
+UENUM(BlueprintType)
 enum class EFireMode : uint8 {
 	EFM_FullAuto UMETA(DisplayName = "Full Auto"),
 	EFM_Single UMETA(DisplayName = "Single"),
 	EFM_Burst UMETA(DisplayName = "Burst"),
 	EFM_MAX UMETA(DisplayName = "DefaultMAX")
 };
-
 
 USTRUCT(BlueprintType)
 struct FWeaponStats 
@@ -148,13 +156,16 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-
 private:
 	
 	// Player
 	class APlayerController* playerController;
 	class AFPSCharacter* playerCharacter;
 	const class USkeletalMeshSocket* barrelSocket;
+
+	// Weapon Type
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon Type", meta = (AllowPrivateAccess = "true"))
+	EWeaponType weaponType = EWeaponType::EWT_AR;
 
 	// Stats
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Statistics", meta = (AllowPrivateAccess = "true"))
@@ -218,6 +229,8 @@ private:
 
 // MARK: - Getters and Setters
 public:
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE EWeaponType GetWeaponType() const { return this->weaponType; } 
 	UFUNCTION(BlueprintCallable)
 	FORCEINLINE FWeaponStats GetWeaponStats() const { return this->weaponStats; }
 	FORCEINLINE void SetWeaponStats(FWeaponStats stats) { this->weaponStats = stats; }

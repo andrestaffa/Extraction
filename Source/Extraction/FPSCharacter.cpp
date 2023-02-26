@@ -220,7 +220,7 @@ void AFPSCharacter::SlideUpdate() {
 
 void AFPSCharacter::ADSUpdate() {
 	if (!this->equippedWeapon) return;
-	this->movementSettings.ADSEnabled = !this->playerLoadout.bIsSwitchingWeapon && !this->equippedWeapon->GetWeaponStats().bIsClipping && this->movementSettings.bAdsButtonPressed;
+	this->movementSettings.ADSEnabled = !this->movementSettings.isReloading && !this->playerLoadout.bIsSwitchingWeapon && !this->equippedWeapon->GetWeaponStats().bIsClipping && this->movementSettings.bAdsButtonPressed;
 	float adsSpeed = this->equippedWeapon->GetWeaponStats().adsSpeed;
 	this->movementSettings.ADSValue = (this->movementSettings.ADSEnabled) ? FMath::FInterpTo(this->movementSettings.ADSValue, 1.0f, GetWorld()->GetDeltaSeconds(), adsSpeed) : FMath::FInterpTo(this->movementSettings.ADSValue, 0.0f, GetWorld()->GetDeltaSeconds(), adsSpeed);
 	this->equippedWeapon->SetADSValue(this->movementSettings.ADSValue);
@@ -343,7 +343,7 @@ void AFPSCharacter::ReloadButtonPressed(FKey keyPressed) {
 		GetWorldTimerManager().SetTimer(timerHandle, [&](){
 			if (this->interactionSettings.bIsInteractionHeld) return; 
 			if (this->movementSettings.isReloading || this->playerLoadout.bIsSwitchingWeapon || !this->equippedWeapon) return;
-			if (!this->movementSettings.isSprinting) {
+			if (!this->movementSettings.isSprinting || !this->movementSettings.ADSEnabled) {
 				FWeaponMontages weaponMontages = this->equippedWeapon->GetWeaponMontages();
 				if (!weaponMontages.reloadMontage) return;
 				float animTime = this->PlayAnimMontage(weaponMontages.reloadMontage);
@@ -357,7 +357,7 @@ void AFPSCharacter::ReloadButtonPressed(FKey keyPressed) {
 		return;
 	}
 	if (this->movementSettings.isReloading || this->playerLoadout.bIsSwitchingWeapon || !this->equippedWeapon) return;
-	if (!this->movementSettings.isSprinting) {
+	if (!this->movementSettings.isSprinting || !this->movementSettings.ADSEnabled) {
 		// TODO: - Configure animTime for shotguns and snipers (animations that require chambers)
 		// MaxAmmo / How much left in chamber
 		FWeaponMontages weaponMontages = this->equippedWeapon->GetWeaponMontages();
