@@ -145,7 +145,8 @@ void AFPSCharacter::SpawnWeapon(TSubclassOf<AWeapon> weaponClass, EWeaponSlot we
 	params.Owner = this;
 	this->equippedWeapon = GetWorld()->SpawnActor<AWeapon>(weaponClass, this->GetActorLocation(), FRotator::ZeroRotator, params);
 	if (this->equippedWeapon) {
-		this->equippedWeapon->AttachToComponent(this->GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, FName("RightHand"));
+		FName placement = (this->equippedWeapon->GetWeaponType() == EWeaponType::EWT_Sniper) ? FName("LeftHand") : FName("RightHand");
+		this->equippedWeapon->AttachToComponent(this->GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, placement);
 	} else {
 		GEngine->AddOnScreenDebugMessage(-1, 20.0f, FColor::Red, FString::Printf(TEXT("[AFPSCharacter]: equippedWeapon* is NULL")), false);
 	}
