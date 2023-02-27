@@ -41,8 +41,9 @@ void AWeapon::BeginPlay() {
 	this->OnDestroyed.AddDynamic(this, &AWeapon::ActorDestroyed);
 
 	if (!this->playerCharacter || !this->playerCharacter) return;
+	FVector rightHandVector = (this->weaponType == EWeaponType::EWT_Sniper) ? FVector(-25.0f, 0.0f, 10.0f) : FVector(25.0f, 0.0f, 0.0f);
 	this->clippingSettings.intialClipPostion = this->rightHandEffectorLocation;
-	this->clippingSettings.targetGunClipPostion = this->rightHandEffectorLocation + FVector(25.0f, 0.0f, 0.0f);
+	this->clippingSettings.targetGunClipPostion = this->rightHandEffectorLocation + rightHandVector;
 }
 
 // Called every frame
