@@ -186,7 +186,8 @@ void AFPSCharacter::FireModeButtonPressed() {
 
 void AFPSCharacter::MovementUpdate() {
 	if (this->movementSettings.ADSEnabled || this->movementSettings.moveForwardValue <= -1.0f || (this->movementSettings.moveRightValue != 0.0f && this->movementSettings.moveForwardValue == 0.0f) || this->movementSettings.isVaulting || this->movementSettings.isClimbing 
-		|| this->GetVelocity().Length() <= this->movementSettings.walkSpeed - 50.0f || (this->equippedWeapon && this->equippedWeapon->IsShooting()) || this->playerLoadout.bIsSwitchingWeapon) {
+		|| this->GetVelocity().Length() <= this->movementSettings.walkSpeed - 50.0f || (this->equippedWeapon && this->equippedWeapon->IsShooting()) || this->playerLoadout.bIsSwitchingWeapon || 
+			(this->equippedWeapon->GetWeaponType() == EWeaponType::EWT_Pistol && this->GetCharacterMovement()->IsFalling())) {
 		this->ToggleSprint(false);
 		return;
 	}
