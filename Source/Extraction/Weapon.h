@@ -72,6 +72,8 @@ struct FWeaponMontages {
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	class UAnimMontage* reloadMontage;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	class UAnimationAsset* gunAnimation;
 };
 
 USTRUCT(BlueprintType)
@@ -207,8 +209,12 @@ public:
 	void StopShooting();
 	const FVector BulletDirection();
 
+	// Attachments
 	void SetAttachment(class AWeaponAttachment* attachment);
 	void RemoveAttacment(class AWeaponAttachment* attachment);
+
+	// Reload
+	void Reload();
 
 private:
 	void NullChecks();

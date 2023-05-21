@@ -344,33 +344,11 @@ void AFPSCharacter::ReloadButtonPressed(FKey keyPressed) {
 		FTimerHandle timerHandle;
 		GetWorldTimerManager().SetTimer(timerHandle, [&](){
 			if (this->interactionSettings.bIsInteractionHeld) return; 
-			if (this->movementSettings.isReloading || this->playerLoadout.bIsSwitchingWeapon || !this->equippedWeapon) return;
-			if (!this->movementSettings.isSprinting || !this->movementSettings.ADSEnabled) {
-				FWeaponMontages weaponMontages = this->equippedWeapon->GetWeaponMontages();
-				if (!weaponMontages.reloadMontage) return;
-				float animTime = this->PlayAnimMontage(weaponMontages.reloadMontage);
-				this->movementSettings.isReloading = true;
-				this->equippedWeapon->StopShooting();
-				GetWorldTimerManager().SetTimer(this->movementSettings.reloadTimerHandle, [&](){
-					this->movementSettings.isReloading = false;
-				}, animTime, false);
-			}
+			this->equippedWeapon->Reload();
 		}, 0.2f, false);
 		return;
 	}
-	if (this->movementSettings.isReloading || this->playerLoadout.bIsSwitchingWeapon || !this->equippedWeapon) return;
-	if (!this->movementSettings.isSprinting || !this->movementSettings.ADSEnabled) {
-		// TODO: - Configure animTime for shotguns and snipers (animations that require chambers)
-		// MaxAmmo / How much left in chamber
-		FWeaponMontages weaponMontages = this->equippedWeapon->GetWeaponMontages();
-		if (!weaponMontages.reloadMontage) return;
-		float animTime = this->PlayAnimMontage(weaponMontages.reloadMontage);
-		this->movementSettings.isReloading = true;
-		this->equippedWeapon->StopShooting();
-		GetWorldTimerManager().SetTimer(this->movementSettings.reloadTimerHandle, [&](){
-			this->movementSettings.isReloading = false;
-		}, animTime, false);
-	}
+	this->equippedWeapon->Reload();
 }
 
 void AFPSCharacter::Lean(float axisValue) {

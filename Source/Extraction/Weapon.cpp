@@ -233,6 +233,24 @@ bool AWeapon::HasGripAttachment() const {
 	return false;
 }
 
+void AWeapon::Reload() {
+	// TODO: - Configure animTime for shotguns and snipers (animations that require chambers)
+	// MaxAmmo / How much left in chamber
+	if (!this->playerCharacter) return;
+	if (!this->weaponMontages.reloadMontage) return;
+	if (this->playerCharacter->GetMovementSettings().isReloading || this->playerCharacter->GetPlayerLoadout().bIsSwitchingWeapon) return;
+	if (!this->playerCharacter->GetMovementSettings().isSprinting || !this->playerCharacter->GetMovementSettings().ADSEnabled) {
+		if (this->weaponMontages.gunAnimation) this->GetItemSkeletalMesh()->PlayAnimation(this->weaponMontages.gunAnimation, false);
+		float animTime = this->playerCharacter->PlayAnimMontage(weaponMontages.reloadMontage);
+		this->playerCharacter->GetMovementSettings().isReloading = true;
+		this->StopShooting();
+		GetWorldTimerManager().SetTimer(this->playerCharacter->GetMovementSettings().reloadTimerHandle, [&](){
+			this->playerCharacter->GetMovementSettings().isReloading = false;
+		}, animTime, false);
+	}
+}
+
+
 void AWeapon::ActorDestroyed(AActor* Act) {
 	for (AWeaponAttachment* attachment : this->attachments) {
 		attachment->Destroy();
